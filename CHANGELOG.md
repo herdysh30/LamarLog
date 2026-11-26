@@ -2,6 +2,15 @@
 
 All notable changes to **LamarLog** (formerly ApplyFlow) are documented in this file.
 
+## [1.3.0] - 2026-11-26
+
+### Added
+- **Customizable Automatic Interview Reminders:** Configure up to 2 automatic reminder slots (5 minutes to 7 days before interviews, presets + custom minutes/hours/days input, per-slot ON/OFF toggles, and one-tap Reset Default) in Notification Settings, with automatic rescheduling of upcoming interviews.
+- **Multi-page Settings Hub & Permission Recovery:** Reorganized Settings into clean category sub-pages (Appearance & Language, Pipeline Stages, Notifications & Reminders, Data & Backup, About) and added a recovery flow when OS notification permission is denied.
+
+### Changed
+- **Codebase Modularization:** Split oversized pages and BLoC (`ApplicationDetailPage`, `PipelinePage`, `ApplicationFormPage`, `NotificationsPage`, `DataBackupSettingsPage`, `AnalyticsPage`, `ApplicationsBloc`) into cohesive feature widgets, `BackupService`, BLoC `part` files, and a shared `showScheduleInterviewDialog`.
+
 ## [1.2.0] - 2026-11-26
 
 ### Changed
