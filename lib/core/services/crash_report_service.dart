@@ -89,12 +89,18 @@ class CrashReportService {
   static const String githubOwner = 'herdysh30';
   static const String githubRepo = 'LamarLog';
 
+  static const String defaultEndpoint =
+      'https://lamarlog-report-worker.herdysh30.workers.dev/report';
+
   /// Configure via `--dart-define=REPORT_ENDPOINT=https://lamarlog-report-worker.<subdomain>.workers.dev/report`
   /// or set directly after deploying `tools/report-worker`.
   static const String configuredEndpoint = String.fromEnvironment(
     'REPORT_ENDPOINT',
-    defaultValue: '',
+    defaultValue: defaultEndpoint,
   );
+
+  static String get effectiveEndpoint =>
+      configuredEndpoint.trim().isNotEmpty ? configuredEndpoint.trim() : defaultEndpoint;
 
   static const int _maxStoredErrors = 5;
   final List<RecordedAppError> _recentErrors = [];
@@ -104,7 +110,7 @@ class CrashReportService {
   RecordedAppError? get latestError =>
       _recentErrors.isEmpty ? null : _recentErrors.last;
 
-  bool get hasEndpointConfigured => configuredEndpoint.trim().isNotEmpty;
+  bool get hasEndpointConfigured => effectiveEndpoint.isNotEmpty;
 
   /// Records a sanitized error in memory (never persists user job data).
   void recordError(
@@ -269,7 +275,7 @@ ${payload.stackTrace.trim().isNotEmpty ? '\n### Stack Trace\n```text\n${payload.
     CrashReportPayload payload, {
     String? endpointOverride,
   }) async {
-    final endpoint = (endpointOverride ?? configuredEndpoint).trim();
+    final endpoint = (endpointOverride ?? effectiveEndpoint).trim();
     if (endpoint.isEmpty) {
       return const CrashReportSendResult(
         status: CrashReportSendStatus.notConfigured,

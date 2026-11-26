@@ -42,6 +42,12 @@ void main() {
       );
       expect(explicit.toString(), 'https://custom.workers.dev/release');
 
+      final fallbackDefault = UpdateCheckService.resolveEndpoint();
+      expect(
+        fallbackDefault.toString(),
+        'https://lamarlog-report-worker.herdysh30.workers.dev/latest-release',
+      );
+
       expect(
         UpdateCheckService.resolveEndpoint(endpointOverride: ''),
         isNull,

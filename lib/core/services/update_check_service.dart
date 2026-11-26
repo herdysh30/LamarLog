@@ -99,7 +99,7 @@ class UpdateCheckService {
     if (explicit != null) return explicit;
 
     final reportBase = _parseHttpUri(
-      reportEndpointOverride ?? CrashReportService.configuredEndpoint,
+      reportEndpointOverride ?? CrashReportService.effectiveEndpoint,
     );
     if (reportBase == null) return null;
 
