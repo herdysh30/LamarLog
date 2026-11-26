@@ -75,7 +75,15 @@ class AnalyticsCalculator {
       final list = List<StatusTransition>.from(entry.value)
         ..sort((a, b) => a.transitionedAt.compareTo(b.transitionedAt));
 
-      final statusesReached = list.map((e) => e.toStatus).toSet();
+      // If an application was moved back to wishlist (e.g. accidental drag),
+      // ignore prior transitions so reverted stages are not counted as applied.
+      final lastWishlistIdx = list.lastIndexWhere(
+        (t) => t.toStatus == ApplicationStatus.wishlist.name,
+      );
+      final effectiveList =
+          lastWishlistIdx >= 0 ? list.sublist(lastWishlistIdx) : list;
+
+      final statusesReached = effectiveList.map((e) => e.toStatus).toSet();
       for (final s in statusesReached) {
         stageCounts[s] = (stageCounts[s] ?? 0) + 1;
       }
@@ -102,7 +110,7 @@ class AnalyticsCalculator {
         offerAppIds.add(appId);
       }
 
-      DateTime? firstAt(String status) => list
+      DateTime? firstAt(String status) => effectiveList
           .where((t) => t.toStatus == status)
           .firstOrNull
           ?.transitionedAt;
@@ -113,7 +121,7 @@ class AnalyticsCalculator {
       final tOffer = firstAt(ApplicationStatus.offering.name);
 
       if (tApplied != null) {
-        final firstResponse = list
+        final firstResponse = effectiveList
             .where((t) =>
                 t.transitionedAt.isAfter(tApplied) &&
                 (t.toStatus == ApplicationStatus.screening.name ||

@@ -169,8 +169,10 @@ class ApplicationsBloc extends Bloc<ApplicationsEvent, ApplicationsState> {
     try {
       final now = DateTime.now().toUtc();
       final statusChanged = event.existing.currentStatus != event.statusId;
+      final movedBackToWishlist =
+          event.statusId == ApplicationStatus.wishlist.name;
       final shouldSetAppliedAt = event.existing.appliedAt == null &&
-          event.statusId != ApplicationStatus.wishlist.name;
+          !movedBackToWishlist;
 
       await _db.updateApplicationDetails(
         JobApplicationsCompanion(
@@ -190,7 +192,9 @@ class ApplicationsBloc extends Bloc<ApplicationsEvent, ApplicationsState> {
           sourcePlatform: Value(event.sourcePlatform),
           recruiterName: Value(event.recruiterName),
           recruiterContact: Value(event.recruiterContact),
-          appliedAt: shouldSetAppliedAt ? Value(now) : const Value.absent(),
+          appliedAt: movedBackToWishlist
+              ? const Value(null)
+              : (shouldSetAppliedAt ? Value(now) : const Value.absent()),
           updatedAt: Value(now),
         ),
       );
@@ -219,14 +223,17 @@ class ApplicationsBloc extends Bloc<ApplicationsEvent, ApplicationsState> {
 
     try {
       final now = DateTime.now().toUtc();
-      final shouldSetAppliedAt = event.application.appliedAt == null &&
-          event.newStatusId != ApplicationStatus.wishlist.name;
+      final movedBackToWishlist =
+          event.newStatusId == ApplicationStatus.wishlist.name;
+      final shouldSetAppliedAt =
+          event.application.appliedAt == null && !movedBackToWishlist;
 
       await _db.updateApplicationStatus(
         applicationId: event.application.id,
         fromStatus: event.application.currentStatus,
         toStatus: event.newStatusId,
         appliedAt: shouldSetAppliedAt ? now : null,
+        clearAppliedAt: movedBackToWishlist,
         transition: StatusTransitionsCompanion.insert(
           id: _uuid.v4(),
           applicationId: event.application.id,

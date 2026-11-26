@@ -141,13 +141,16 @@ class AppDatabase extends _$AppDatabase {
     required String toStatus,
     required StatusTransitionsCompanion transition,
     DateTime? appliedAt,
+    bool clearAppliedAt = false,
   }) {
     return transaction(() async {
       await (update(jobApplications)..where((t) => t.id.equals(applicationId)))
           .write(
         JobApplicationsCompanion(
           currentStatus: Value(toStatus),
-          appliedAt: appliedAt != null ? Value(appliedAt) : const Value.absent(),
+          appliedAt: clearAppliedAt
+              ? const Value(null)
+              : (appliedAt != null ? Value(appliedAt) : const Value.absent()),
           updatedAt: Value(DateTime.now().toUtc()),
         ),
       );

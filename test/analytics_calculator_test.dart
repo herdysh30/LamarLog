@@ -148,5 +148,78 @@ void main() {
         1,
       );
     });
+
+    test('reverts applied count when app moves wishlist -> applied -> wishlist',
+        () {
+      final t0 = DateTime.utc(2026, 2, 1, 9, 0);
+      final transitions = <StatusTransition>[
+        _tx(id: '1', appId: 'a1', to: ApplicationStatus.wishlist, at: t0),
+        _tx(
+          id: '2',
+          appId: 'a1',
+          from: 'wishlist',
+          to: ApplicationStatus.applied,
+          at: t0.add(const Duration(minutes: 5)),
+        ),
+        _tx(
+          id: '3',
+          appId: 'a1',
+          from: 'applied',
+          to: ApplicationStatus.wishlist,
+          at: t0.add(const Duration(minutes: 6)),
+        ),
+      ];
+
+      final metrics = AnalyticsCalculator.computeMetrics(transitions);
+      expect(metrics.totalTracked, 1);
+      expect(metrics.totalApplied, 0);
+      expect(metrics.stageCounts[ApplicationStatus.wishlist.name], 1);
+      expect(metrics.stageCounts[ApplicationStatus.applied.name], 0);
+    });
+
+    test(
+        'counts applied again after wishlist -> applied -> wishlist -> applied',
+        () {
+      final t0 = DateTime.utc(2026, 2, 1, 9, 0);
+      final transitions = <StatusTransition>[
+        _tx(id: '1', appId: 'a1', to: ApplicationStatus.wishlist, at: t0),
+        _tx(
+          id: '2',
+          appId: 'a1',
+          from: 'wishlist',
+          to: ApplicationStatus.applied,
+          at: t0.add(const Duration(hours: 1)),
+        ),
+        _tx(
+          id: '3',
+          appId: 'a1',
+          from: 'applied',
+          to: ApplicationStatus.wishlist,
+          at: t0.add(const Duration(hours: 2)),
+        ),
+        _tx(
+          id: '4',
+          appId: 'a1',
+          from: 'wishlist',
+          to: ApplicationStatus.applied,
+          at: t0.add(const Duration(days: 5)),
+        ),
+        _tx(
+          id: '5',
+          appId: 'a1',
+          from: 'applied',
+          to: ApplicationStatus.screening,
+          at: t0.add(const Duration(days: 7)),
+        ),
+      ];
+
+      final metrics = AnalyticsCalculator.computeMetrics(transitions);
+      expect(metrics.totalTracked, 1);
+      expect(metrics.totalApplied, 1);
+      expect(metrics.stageCounts[ApplicationStatus.applied.name], 1);
+      expect(metrics.stageCounts[ApplicationStatus.screening.name], 1);
+      // Velocity uses the second (effective) applied timestamp: 7d - 5d = 2.0d
+      expect(metrics.appliedToScreenDays, closeTo(2.0, 0.01));
+    });
   });
 }
