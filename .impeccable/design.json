@@ -1,0 +1,190 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-26T01:09:00Z",
+  "title": "Design System: ApplyFlow",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Electric Indigo",
+        "canonical": "#3525cd",
+        "tonalRamp": ["#0f0069", "#24179e", "#3525cd", "#4f46e5", "#6d66f0", "#9893f8", "#c3c0ff", "#e2dfff"]
+      },
+      "secondary": {
+        "role": "secondary",
+        "displayName": "Slate Steel",
+        "canonical": "#505f76",
+        "tonalRamp": ["#0b1c30", "#223247", "#38485d", "#505f76", "#6c7c94", "#91a2bb", "#b7c8e1", "#d3e4fe"]
+      },
+      "tertiary": {
+        "role": "tertiary",
+        "displayName": "Deep Teal",
+        "canonical": "#00524b",
+        "tonalRamp": ["#00201d", "#003833", "#00524b", "#006c63", "#1b8b80", "#42b2a6", "#6bd8cb", "#89f5e7"]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Lavender Paper",
+        "canonical": "#faf8ff",
+        "tonalRamp": ["#0b1120", "#162033", "#1e293b", "#464555", "#777587", "#c7c4d8", "#eaedff", "#faf8ff"]
+      }
+    },
+    "typographyMeta": {
+      "headline-large": {
+        "displayName": "Headline Large",
+        "purpose": "Screen-level titles such as Analytics & Insights and Settings."
+      },
+      "headline-medium": {
+        "displayName": "Headline Medium",
+        "purpose": "KPI figures and prominent section numbers."
+      },
+      "title-medium": {
+        "displayName": "Title Medium",
+        "purpose": "Card headers and stack AppBar titles."
+      },
+      "metric-md": {
+        "displayName": "Metric Medium",
+        "purpose": "Tabular compensation figures, percentages, and stage dwell metrics."
+      },
+      "body-medium": {
+        "displayName": "Body Medium",
+        "purpose": "Form input text, timeline notes, and body descriptions."
+      }
+    },
+    "shadows": [
+      {
+        "name": "card-ambient-light",
+        "value": "0 2px 10px rgba(19, 27, 46, 0.045)",
+        "purpose": "Subtle resting separation for SurfaceCard in Light Mode."
+      },
+      {
+        "name": "nav-elevation-light",
+        "value": "0 -2px 14px rgba(19, 27, 46, 0.05)",
+        "purpose": "Soft upward lift for the bottom NavigationBar in Light Mode."
+      },
+      {
+        "name": "fab-elevated",
+        "value": "0 6px 18px rgba(79, 70, 229, 0.28)",
+        "purpose": "Floating prominence for the Track Job action button."
+      }
+    ],
+    "motion": [
+      {
+        "name": "state-fast",
+        "value": "160ms cubic-bezier(0.2, 0, 0, 1)",
+        "purpose": "Segmented toggles, drag-target highlight, and filter chips."
+      },
+      {
+        "name": "funnel-bar",
+        "value": "450ms cubic-bezier(0.22, 1, 0.36, 1)",
+        "purpose": "Smooth progress fill on Analytics funnel bars."
+      }
+    ],
+    "breakpoints": [
+      { "name": "compact-phone", "value": "360dp" },
+      { "name": "standard-phone", "value": "390dp" },
+      { "name": "tablet", "value": "600dp" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Full-width 52px primary CTA used to save applications and apply filters.",
+      "html": "<button class=\"ds-btn-primary\" type=\"button\">Save Application</button>",
+      "css": ".ds-btn-primary { background: #4f46e5; color: #ffffff; height: 52px; padding: 0 20px; border: none; border-radius: 14px; font-family: Inter, sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; transition: filter 160ms ease, transform 120ms ease; } .ds-btn-primary:hover { filter: brightness(1.06); } .ds-btn-primary:active { transform: scale(0.98); } .ds-btn-primary:focus-visible { outline: 2px solid #3525cd; outline-offset: 2px; }"
+    },
+    {
+      "name": "Tonal Status Selector",
+      "kind": "button",
+      "refersTo": "button-tonal",
+      "description": "Accessible non-drag status transition control in Application Detail.",
+      "html": "<button class=\"ds-btn-tonal\" type=\"button\"><span class=\"ds-dot\"></span><span>Interview Stage</span><span class=\"ds-action\">Change</span></button>",
+      "css": ".ds-btn-tonal { width: 100%; height: 48px; padding: 0 14px; background: #e2dfff; color: #0f0069; border: none; border-radius: 12px; display: flex; align-items: center; gap: 10px; font-family: Inter, sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: filter 160ms ease; } .ds-btn-tonal .ds-dot { width: 9px; height: 9px; border-radius: 9999px; background: #00524b; } .ds-btn-tonal .ds-action { margin-left: auto; font-size: 12px; color: #3525cd; } .ds-btn-tonal:hover { filter: brightness(0.97); }"
+    },
+    {
+      "name": "Application Card",
+      "kind": "card",
+      "refersTo": "card-surface",
+      "description": "Elevated Kanban and List card displaying company, role, salary, priority, and stage dwell time.",
+      "html": "<article class=\"ds-card\"><div class=\"ds-card-head\"><div class=\"ds-avatar\">T</div><div class=\"ds-meta\"><strong>Traveloka</strong><span>Senior UX Designer</span></div><span class=\"ds-prio\">High</span></div><div class=\"ds-card-mid\"><span class=\"ds-salary\">Rp 32.000.000<small>/mo</small></span><span class=\"ds-chip\">Hybrid</span></div></article>",
+      "css": ".ds-card { background: #ffffff; color: #131b2e; border-radius: 14px; padding: 14px; border: 1px solid rgba(199, 196, 216, 0.4); box-shadow: 0 2px 10px rgba(19, 27, 46, 0.045); font-family: Inter, sans-serif; display: flex; flex-direction: column; gap: 12px; } .ds-card-head { display: flex; align-items: center; gap: 10px; } .ds-avatar { width: 38px; height: 38px; border-radius: 10px; background: #e2dfff; color: #3525cd; display: flex; align-items: center; justify-content: center; font-weight: 700; } .ds-meta { display: flex; flex-direction: column; flex: 1; } .ds-meta strong { font-size: 14px; } .ds-meta span { font-size: 12px; color: #464555; } .ds-prio { background: #ffdad6; color: #93000a; border-radius: 9999px; padding: 3px 8px; font-size: 11px; font-weight: 600; } .ds-card-mid { display: flex; justify-content: space-between; align-items: center; } .ds-salary { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; } .ds-salary small { font-size: 12px; color: #505f76; font-weight: 400; } .ds-chip { background: #eaedff; color: #464555; border-radius: 7px; padding: 4px 8px; font-size: 11px; font-weight: 600; }"
+    },
+    {
+      "name": "Filled Input Field",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Soft tonal filled text input with focused indigo ring.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"Filter company, role, or stage...\" />",
+      "css": ".ds-input { width: 100%; height: 50px; padding: 0 14px; background: #f2f3ff; color: #131b2e; border: 1.5px solid transparent; border-radius: 12px; font-family: Inter, sans-serif; font-size: 14px; outline: none; transition: border-color 160ms ease, background 160ms ease; } .ds-input::placeholder { color: #777587; } .ds-input:focus { background: #ffffff; border-color: #4f46e5; }"
+    },
+    {
+      "name": "Offline Ready Pill",
+      "kind": "chip",
+      "refersTo": "pill-offline",
+      "description": "Trust badge indicating 100% private local SQLite persistence.",
+      "html": "<span class=\"ds-pill-offline\"><span class=\"ds-pill-dot\"></span>Offline Ready</span>",
+      "css": ".ds-pill-offline { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 9999px; background: #eaedff; color: #00524b; font-family: Inter, sans-serif; font-size: 11px; font-weight: 600; } .ds-pill-dot { width: 7px; height: 7px; border-radius: 9999px; background: #00524b; }"
+    },
+    {
+      "name": "Bottom Navigation Bar",
+      "kind": "nav",
+      "refersTo": "nav-bar",
+      "description": "3-tab Material 3 NavigationBar with stadium indigo active indicator.",
+      "html": "<nav class=\"ds-nav\"><span class=\"ds-nav-item ds-active\"><span class=\"ds-ind\">Pipeline</span></span><span class=\"ds-nav-item\">Analytics</span><span class=\"ds-nav-item\">Settings</span></nav>",
+      "css": ".ds-nav { height: 68px; background: #ffffff; border-top: 1px solid rgba(199, 196, 216, 0.35); display: flex; justify-content: space-around; align-items: center; font-family: Inter, sans-serif; font-size: 11px; font-weight: 600; color: #505f76; } .ds-nav-item.ds-active { color: #3525cd; } .ds-nav-item.ds-active .ds-ind { background: #4f46e5; color: #ffffff; padding: 6px 16px; border-radius: 9999px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Focused Career Desk",
+    "overview": "ApplyFlow is an Operate-mode productivity tool built for active job hunters managing dozens of applications, interviews, resumes, and offers offline. The interface stays calm, legible, and fast so the user's attention stays on company names, compensation numbers, upcoming interview dates, and stage progress rather than ornamental UI chrome. The visual world pairs cool lavender-tinted paper surfaces in Light Mode (and deep slate in Dark Mode) with disciplined indigo primary actions and grounded teal trust signals for offline persistence and positive interview states.",
+    "keyCharacteristics": [
+      "Tonal surface layering instead of heavy dividers or harsh gray borders.",
+      "Crisp tabular numerals on all salary figures, conversion percentages, and dwell-time counters.",
+      "Purposeful semantic color reserved for active stages, priority urgency, offline trust, and destructive actions.",
+      "Touch-first ergonomics with minimum 48dp interactive targets and non-drag accessibility fallbacks."
+    ],
+    "rules": [
+      {
+        "name": "The Semantic Restraint Rule",
+        "body": "Accent colors (primary-container, error, tertiary) appear only on primary CTAs, active selections, stage dots, and semantic status pills—never as decorative full-card fills or inactive chrome.",
+        "section": "colors"
+      },
+      {
+        "name": "The Adaptive Contrast Rule",
+        "body": "Every status badge, priority pill, and warning box uses paired background and foreground tokens per brightness mode so text stays >= 4.5:1 in both Light and Dark themes.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tabular Numerals Rule",
+        "body": "Every salary figure, funnel percentage, storage size, and day counter must enable FontFeature.tabularFigures() so numeric columns align cleanly when scanning cards and analytics.",
+        "section": "typography"
+      },
+      {
+        "name": "The No-Left-Stripe Rule",
+        "body": "Never place thick colored border-left accent strips on cards, interview callouts, or alerts. Signal category and emphasis through tinted icon containers and semantic status pills.",
+        "section": "elevation"
+      },
+      {
+        "name": "The No-Nested-Cards Rule",
+        "body": "Inside a SurfaceCard, inner groupings use flat borderless tonal fills rather than bordered nested cards.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do use SurfaceCard, ApplyFlowAppBar, OfflineStatusPill, and CompanyMonogram for all new screens to keep elevation, typography, and chrome unified.",
+      "Do enable FontFeature.tabularFigures() on every monetary figure, percentage, counter, and storage metric.",
+      "Do provide clear empty states with direct CTAs and destructive confirmation dialogs before deleting data or overwriting backups.",
+      "Do keep active pipeline stages strictly separate from terminal outcomes in both Kanban columns and status pickers.",
+      "Do verify every new screen in both Light Mode (#FAF8FF canvas) and Dark Mode (#0B1120 canvas) from 360dp width upward."
+    ],
+    "donts": [
+      "Don't add colored border-left strips above 1px on cards, interview alerts, or warning callouts.",
+      "Don't nest bordered cards inside other cards; use flat tonal fills (surface-container-low) for inner groupings.",
+      "Don't place decorative uppercase eyebrow/kicker labels above headings.",
+      "Don't hardcode raw Colors.red, Colors.grey, or Colors.white text/backgrounds where theme ColorScheme or AppColors semantic helpers belong.",
+      "Don't rely solely on drag-and-drop for status transitions; always maintain the accessible Change status selector in ApplicationDetailPage."
+    ]
+  }
+}
