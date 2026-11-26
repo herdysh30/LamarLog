@@ -2,6 +2,13 @@
 
 All notable changes to **LamarLog** (formerly ApplyFlow) are documented in this file.
 
+## [1.2.0] - 2026-11-26
+
+### Changed
+- **Full Rebrand to LamarLog:** Renamed the app, launcher labels (Android & iOS), AppBar, Onboarding, About page, release APKs (`LamarLog-*.apk`), and JSON/CSV export filenames from ApplyFlow to **LamarLog**.
+- **Clean Package & Storage Migration:** Migrated Dart package (`lamarlog`), Android `applicationId`/`namespace` & iOS bundle identifier (`com.lamarlog.lamarlog`), SQLite database (`lamarlog.sqlite`), and local `SharedPreferences` keys (`lamarlog_*`).
+- **Repository & Bug Report Worker Update:** Updated GitHub repository links to `herdysh30/LamarLog`, updated Cloudflare Worker proxy (`lamarlog-report-worker`), and ignored `.wrangler/` local cache files.
+
 ## [1.1.0] - 2026-11-26
 
 ### Added
