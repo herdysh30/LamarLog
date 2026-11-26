@@ -1,17 +1,58 @@
-# applyflow
+# ApplyFlow
 
-A new Flutter project.
+**ApplyFlow** is an offline-first mobile job application tracker built with Flutter. Manage your career pipeline on a Kanban board or list view, log interview schedules with local reminders, attach tailored PDF resumes privately on-device, and track conversion analytics from full status history.
+
+## Features
+
+- **Pipeline Kanban & List View:** Drag-and-drop Kanban board (`LongPressDraggable` / `DragTarget`) with customizable column names, plus a responsive list/grid view, search, filters (workplace type, priority), sorting, and a dedicated Terminal Archive for completed outcomes (`Offer Accepted`, `Offer Declined`, `Rejected`, `Withdrawn`, `No Response`).
+- **Application Detail & Timeline:** Full status picker, quick metrics (expected/offered compensation, location, recruiter contact with direct actions), private PDF resume attachment (max 10 MB with built-in preview), and a chronological vertical timeline with manual notes.
+- **Interview Reminders:** Schedule local notifications with automatic 24-hour and 1-hour reminders (including smart fallback rules when scheduled <24h or <1h away) and a dedicated Reminders tab with countdown badges.
+- **Funnel Analytics:** Real-time conversion rates, active pipeline breakdown, stage velocity, and actionable insights calculated directly from immutable `StatusTransition` history records.
+- **Offline-First & Private by Design:** All applications, notes, schedules, and PDF files are stored locally on your device (`android:allowBackup="false"`). Export/import full JSON backups or export CSV spreadsheets anytime.
+- **Personalization & Responsive UI:** Material 3 Light & Dark themes, 5 color palettes (`Indigo`, `Emerald`, `Ocean`, `Amber`, `Rose`), bilingual UI (`English` & `Bahasa Indonesia`), IDR/USD currency formatting, and adaptive phone/tablet navigation (`NavigationBar` / `NavigationRail`).
+
+## Tech Stack
+
+- **Framework:** Flutter 3.24+ / Dart 3.5+
+- **State Management:** `flutter_bloc` + `equatable`
+- **Local Database:** `drift` (SQLite)
+- **Preferences:** `shared_preferences`
+- **Notifications:** `flutter_local_notifications` + `timezone`
+- **Files & PDF:** `file_picker` + `flutter_pdfview` + `path_provider`
+- **Typography:** `google_fonts` (`Plus Jakarta Sans` & `Inter`)
+
+## Architecture
+
+Feature-first Clean Architecture:
+
+```text
+lib/
+├── app/            # App shell, adaptive navigation, Material 3 theme & palettes
+├── core/           # Drift database, enums, l10n, responsive layout, services, shared widgets
+└── features/
+    ├── analytics/      # StatusTransition-based funnel & velocity metrics
+    ├── applications/   # Pipeline (Kanban/List), Form, Detail, PDF preview, BLoC
+    ├── onboarding/     # First-run onboarding flow
+    ├── reminders/      # Upcoming & past interview schedules
+    └── settings/       # Appearance, language, currency, Kanban customization, backup/export
+```
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
+```bash
+flutter pub get
+dart run build_runner build --delete-conflicting-outputs
+flutter analyze
+flutter run
+```
 
-A few resources to get you started if this is your first Flutter project:
+### Build Release APK
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+```bash
+flutter build apk --release
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Documentation
+
+- [PRD.md](PRD.md) — Product Requirements Document (v2.0.0)
+- [DESIGN.md](DESIGN.md) — Design system tokens, typography, and component guidelines

@@ -9,6 +9,7 @@ import 'package:uuid/uuid.dart';
 import '../../../../core/database/app_database.dart';
 import '../../../../core/enums/application_enums.dart';
 import '../../../../core/services/notification_service.dart';
+import '../../../../core/utils/stale_application_helper.dart';
 
 enum PipelineSortOption {
   latestMove('Latest Stage Move'),
@@ -50,15 +51,26 @@ class UpdateFilters extends ApplicationsEvent {
   const UpdateFilters({
     this.workplaceFilter,
     this.priorityFilter,
+    this.staleOnlyFilter = false,
     this.sortOption = PipelineSortOption.latestMove,
   });
 
   final WorkplaceType? workplaceFilter;
   final PriorityLevel? priorityFilter;
+  final bool staleOnlyFilter;
   final PipelineSortOption sortOption;
 
   @override
-  List<Object?> get props => [workplaceFilter, priorityFilter, sortOption];
+  List<Object?> get props => [
+        workplaceFilter,
+        priorityFilter,
+        staleOnlyFilter,
+        sortOption,
+      ];
+}
+
+class ToggleStaleFilter extends ApplicationsEvent {
+  const ToggleStaleFilter();
 }
 
 class ResetFilters extends ApplicationsEvent {
@@ -79,6 +91,7 @@ class AddApplication extends ApplicationsEvent {
     this.expectedSalary,
     this.offeredSalary,
     this.vacancyUrl,
+    this.sourcePlatform,
     this.recruiterName,
     this.recruiterContact,
   });
@@ -95,6 +108,7 @@ class AddApplication extends ApplicationsEvent {
   final double? expectedSalary;
   final double? offeredSalary;
   final String? vacancyUrl;
+  final String? sourcePlatform;
   final String? recruiterName;
   final String? recruiterContact;
 
@@ -112,6 +126,7 @@ class AddApplication extends ApplicationsEvent {
         expectedSalary,
         offeredSalary,
         vacancyUrl,
+        sourcePlatform,
         recruiterName,
         recruiterContact,
       ];
@@ -132,6 +147,7 @@ class UpdateApplication extends ApplicationsEvent {
     this.expectedSalary,
     this.offeredSalary,
     this.vacancyUrl,
+    this.sourcePlatform,
     this.recruiterName,
     this.recruiterContact,
   });
@@ -149,6 +165,7 @@ class UpdateApplication extends ApplicationsEvent {
   final double? expectedSalary;
   final double? offeredSalary;
   final String? vacancyUrl;
+  final String? sourcePlatform;
   final String? recruiterName;
   final String? recruiterContact;
 
@@ -167,6 +184,7 @@ class UpdateApplication extends ApplicationsEvent {
         expectedSalary,
         offeredSalary,
         vacancyUrl,
+        sourcePlatform,
         recruiterName,
         recruiterContact,
       ];
@@ -200,6 +218,7 @@ class ApplicationsState extends Equatable {
     this.searchQuery = '',
     this.workplaceFilter,
     this.priorityFilter,
+    this.staleOnlyFilter = false,
     this.sortOption = PipelineSortOption.latestMove,
     this.isLoading = true,
     this.errorMessage,
@@ -209,6 +228,7 @@ class ApplicationsState extends Equatable {
   final String searchQuery;
   final WorkplaceType? workplaceFilter;
   final PriorityLevel? priorityFilter;
+  final bool staleOnlyFilter;
   final PipelineSortOption sortOption;
   final bool isLoading;
   final String? errorMessage;
@@ -216,7 +236,11 @@ class ApplicationsState extends Equatable {
   bool get hasActiveFilters =>
       workplaceFilter != null ||
       priorityFilter != null ||
+      staleOnlyFilter ||
       sortOption != PipelineSortOption.latestMove;
+
+  List<JobApplication> get staleApplications =>
+      StaleApplicationHelper.findStale(applications);
 
   List<JobApplication> get filteredApplications {
     var result = applications.where((app) {
@@ -225,7 +249,8 @@ class ApplicationsState extends Equatable {
         final matches = app.companyName.toLowerCase().contains(q) ||
             app.roleTitle.toLowerCase().contains(q) ||
             app.location.toLowerCase().contains(q) ||
-            app.currentStatus.toLowerCase().contains(q);
+            app.currentStatus.toLowerCase().contains(q) ||
+            (app.sourcePlatform?.toLowerCase().contains(q) ?? false);
         if (!matches) return false;
       }
       if (workplaceFilter != null &&
@@ -233,6 +258,9 @@ class ApplicationsState extends Equatable {
         return false;
       }
       if (priorityFilter != null && app.priority != priorityFilter!.name) {
+        return false;
+      }
+      if (staleOnlyFilter && !StaleApplicationHelper.isStale(app)) {
         return false;
       }
       return true;
@@ -280,6 +308,7 @@ class ApplicationsState extends Equatable {
     bool clearWorkplaceFilter = false,
     PriorityLevel? priorityFilter,
     bool clearPriorityFilter = false,
+    bool? staleOnlyFilter,
     PipelineSortOption? sortOption,
     bool? isLoading,
     String? errorMessage,
@@ -293,6 +322,7 @@ class ApplicationsState extends Equatable {
       priorityFilter: clearPriorityFilter
           ? null
           : (priorityFilter ?? this.priorityFilter),
+      staleOnlyFilter: staleOnlyFilter ?? this.staleOnlyFilter,
       sortOption: sortOption ?? this.sortOption,
       isLoading: isLoading ?? this.isLoading,
       errorMessage: errorMessage,
@@ -305,6 +335,7 @@ class ApplicationsState extends Equatable {
         searchQuery,
         workplaceFilter,
         priorityFilter,
+        staleOnlyFilter,
         sortOption,
         isLoading,
         errorMessage,
@@ -318,6 +349,7 @@ class ApplicationsBloc extends Bloc<ApplicationsEvent, ApplicationsState> {
     on<_ApplicationsUpdated>(_onApplicationsUpdated);
     on<SearchQueryChanged>(_onSearchQueryChanged);
     on<UpdateFilters>(_onUpdateFilters);
+    on<ToggleStaleFilter>(_onToggleStaleFilter);
     on<ResetFilters>(_onResetFilters);
     on<AddApplication>(_onAddApplication);
     on<UpdateApplication>(_onUpdateApplication);
@@ -365,8 +397,16 @@ class ApplicationsBloc extends Bloc<ApplicationsEvent, ApplicationsState> {
       clearWorkplaceFilter: event.workplaceFilter == null,
       priorityFilter: event.priorityFilter,
       clearPriorityFilter: event.priorityFilter == null,
+      staleOnlyFilter: event.staleOnlyFilter,
       sortOption: event.sortOption,
     ));
+  }
+
+  void _onToggleStaleFilter(
+    ToggleStaleFilter event,
+    Emitter<ApplicationsState> emit,
+  ) {
+    emit(state.copyWith(staleOnlyFilter: !state.staleOnlyFilter));
   }
 
   void _onResetFilters(
@@ -376,6 +416,7 @@ class ApplicationsBloc extends Bloc<ApplicationsEvent, ApplicationsState> {
     emit(state.copyWith(
       clearWorkplaceFilter: true,
       clearPriorityFilter: true,
+      staleOnlyFilter: false,
       sortOption: PipelineSortOption.latestMove,
     ));
   }
@@ -403,6 +444,7 @@ class ApplicationsBloc extends Bloc<ApplicationsEvent, ApplicationsState> {
         expectedSalary: Value(event.expectedSalary),
         offeredSalary: Value(event.offeredSalary),
         vacancyUrl: Value(event.vacancyUrl),
+        sourcePlatform: Value(event.sourcePlatform),
         recruiterName: Value(event.recruiterName),
         recruiterContact: Value(event.recruiterContact),
         appliedAt: Value(appliedAt),
@@ -443,6 +485,7 @@ class ApplicationsBloc extends Bloc<ApplicationsEvent, ApplicationsState> {
         expectedSalary: Value(event.expectedSalary),
         offeredSalary: Value(event.offeredSalary),
         vacancyUrl: Value(event.vacancyUrl),
+        sourcePlatform: Value(event.sourcePlatform),
         recruiterName: Value(event.recruiterName),
         recruiterContact: Value(event.recruiterContact),
         appliedAt: shouldSetAppliedAt ? Value(now) : const Value.absent(),

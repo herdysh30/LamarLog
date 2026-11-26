@@ -21,6 +21,7 @@ class JobApplications extends Table {
   RealColumn get expectedSalary => real().nullable()();
   RealColumn get offeredSalary => real().nullable()();
   TextColumn get vacancyUrl => text().nullable()();
+  TextColumn get sourcePlatform => text().nullable()();
   TextColumn get recruiterName => text().nullable()();
   TextColumn get recruiterContact => text().nullable()();
   BoolColumn get isArchived => boolean().withDefault(const Constant(false))();
@@ -95,12 +96,17 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (Migrator m) async {
           await m.createAll();
+        },
+        onUpgrade: (Migrator m, int from, int to) async {
+          if (from < 2) {
+            await m.addColumn(jobApplications, jobApplications.sourcePlatform);
+          }
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
@@ -152,6 +158,11 @@ class AppDatabase extends _$AppDatabase {
   Future<void> updateApplicationDetails(JobApplicationsCompanion entry) {
     return (update(jobApplications)..where((t) => t.id.equals(entry.id.value)))
         .write(entry);
+  }
+
+  Future<void> touchApplicationUpdatedAt(String applicationId) {
+    return (update(jobApplications)..where((t) => t.id.equals(applicationId)))
+        .write(JobApplicationsCompanion(updatedAt: Value(DateTime.now().toUtc())));
   }
 
   Future<int> deleteApplicationById(String id) {

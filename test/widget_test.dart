@@ -1,19 +1,31 @@
 import 'package:drift/native.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'package:applyflow/core/database/app_database.dart';
 import 'package:applyflow/main.dart';
 
 void main() {
-  testWidgets('ApplyFlowApp renders Pipeline shell', (WidgetTester tester) async {
+  setUpAll(() {
+    GoogleFonts.config.allowRuntimeFetching = false;
+  });
+
+  testWidgets('ApplyFlowApp renders Pipeline shell',
+      (WidgetTester tester) async {
     final db = AppDatabase(NativeDatabase.memory());
-    addTearDown(db.close);
 
     await tester.pumpWidget(ApplyFlowApp(database: db));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.text('ApplyFlow'), findsOneWidget);
     expect(find.text('Pipeline'), findsWidgets);
     expect(find.text('Track Job'), findsOneWidget);
+
+    // Unmount widget tree and flush Drift's internal stream cleanup timers
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.runAsync(() => db.close());
   });
 }

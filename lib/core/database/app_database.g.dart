@@ -157,6 +157,17 @@ class $JobApplicationsTable extends JobApplications
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _sourcePlatformMeta = const VerificationMeta(
+    'sourcePlatform',
+  );
+  @override
+  late final GeneratedColumn<String> sourcePlatform = GeneratedColumn<String>(
+    'source_platform',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _recruiterNameMeta = const VerificationMeta(
     'recruiterName',
   );
@@ -242,6 +253,7 @@ class $JobApplicationsTable extends JobApplications
     expectedSalary,
     offeredSalary,
     vacancyUrl,
+    sourcePlatform,
     recruiterName,
     recruiterContact,
     isArchived,
@@ -360,6 +372,15 @@ class $JobApplicationsTable extends JobApplications
         vacancyUrl.isAcceptableOrUnknown(data['vacancy_url']!, _vacancyUrlMeta),
       );
     }
+    if (data.containsKey('source_platform')) {
+      context.handle(
+        _sourcePlatformMeta,
+        sourcePlatform.isAcceptableOrUnknown(
+          data['source_platform']!,
+          _sourcePlatformMeta,
+        ),
+      );
+    }
     if (data.containsKey('recruiter_name')) {
       context.handle(
         _recruiterNameMeta,
@@ -467,6 +488,10 @@ class $JobApplicationsTable extends JobApplications
         DriftSqlType.string,
         data['${effectivePrefix}vacancy_url'],
       ),
+      sourcePlatform: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_platform'],
+      ),
       recruiterName: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}recruiter_name'],
@@ -514,6 +539,7 @@ class JobApplication extends DataClass implements Insertable<JobApplication> {
   final double? expectedSalary;
   final double? offeredSalary;
   final String? vacancyUrl;
+  final String? sourcePlatform;
   final String? recruiterName;
   final String? recruiterContact;
   final bool isArchived;
@@ -534,6 +560,7 @@ class JobApplication extends DataClass implements Insertable<JobApplication> {
     this.expectedSalary,
     this.offeredSalary,
     this.vacancyUrl,
+    this.sourcePlatform,
     this.recruiterName,
     this.recruiterContact,
     required this.isArchived,
@@ -562,6 +589,9 @@ class JobApplication extends DataClass implements Insertable<JobApplication> {
     }
     if (!nullToAbsent || vacancyUrl != null) {
       map['vacancy_url'] = Variable<String>(vacancyUrl);
+    }
+    if (!nullToAbsent || sourcePlatform != null) {
+      map['source_platform'] = Variable<String>(sourcePlatform);
     }
     if (!nullToAbsent || recruiterName != null) {
       map['recruiter_name'] = Variable<String>(recruiterName);
@@ -599,6 +629,9 @@ class JobApplication extends DataClass implements Insertable<JobApplication> {
       vacancyUrl: vacancyUrl == null && nullToAbsent
           ? const Value.absent()
           : Value(vacancyUrl),
+      sourcePlatform: sourcePlatform == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sourcePlatform),
       recruiterName: recruiterName == null && nullToAbsent
           ? const Value.absent()
           : Value(recruiterName),
@@ -633,6 +666,7 @@ class JobApplication extends DataClass implements Insertable<JobApplication> {
       expectedSalary: serializer.fromJson<double?>(json['expectedSalary']),
       offeredSalary: serializer.fromJson<double?>(json['offeredSalary']),
       vacancyUrl: serializer.fromJson<String?>(json['vacancyUrl']),
+      sourcePlatform: serializer.fromJson<String?>(json['sourcePlatform']),
       recruiterName: serializer.fromJson<String?>(json['recruiterName']),
       recruiterContact: serializer.fromJson<String?>(json['recruiterContact']),
       isArchived: serializer.fromJson<bool>(json['isArchived']),
@@ -658,6 +692,7 @@ class JobApplication extends DataClass implements Insertable<JobApplication> {
       'expectedSalary': serializer.toJson<double?>(expectedSalary),
       'offeredSalary': serializer.toJson<double?>(offeredSalary),
       'vacancyUrl': serializer.toJson<String?>(vacancyUrl),
+      'sourcePlatform': serializer.toJson<String?>(sourcePlatform),
       'recruiterName': serializer.toJson<String?>(recruiterName),
       'recruiterContact': serializer.toJson<String?>(recruiterContact),
       'isArchived': serializer.toJson<bool>(isArchived),
@@ -681,6 +716,7 @@ class JobApplication extends DataClass implements Insertable<JobApplication> {
     Value<double?> expectedSalary = const Value.absent(),
     Value<double?> offeredSalary = const Value.absent(),
     Value<String?> vacancyUrl = const Value.absent(),
+    Value<String?> sourcePlatform = const Value.absent(),
     Value<String?> recruiterName = const Value.absent(),
     Value<String?> recruiterContact = const Value.absent(),
     bool? isArchived,
@@ -705,6 +741,9 @@ class JobApplication extends DataClass implements Insertable<JobApplication> {
         ? offeredSalary.value
         : this.offeredSalary,
     vacancyUrl: vacancyUrl.present ? vacancyUrl.value : this.vacancyUrl,
+    sourcePlatform: sourcePlatform.present
+        ? sourcePlatform.value
+        : this.sourcePlatform,
     recruiterName: recruiterName.present
         ? recruiterName.value
         : this.recruiterName,
@@ -745,6 +784,9 @@ class JobApplication extends DataClass implements Insertable<JobApplication> {
       vacancyUrl: data.vacancyUrl.present
           ? data.vacancyUrl.value
           : this.vacancyUrl,
+      sourcePlatform: data.sourcePlatform.present
+          ? data.sourcePlatform.value
+          : this.sourcePlatform,
       recruiterName: data.recruiterName.present
           ? data.recruiterName.value
           : this.recruiterName,
@@ -776,6 +818,7 @@ class JobApplication extends DataClass implements Insertable<JobApplication> {
           ..write('expectedSalary: $expectedSalary, ')
           ..write('offeredSalary: $offeredSalary, ')
           ..write('vacancyUrl: $vacancyUrl, ')
+          ..write('sourcePlatform: $sourcePlatform, ')
           ..write('recruiterName: $recruiterName, ')
           ..write('recruiterContact: $recruiterContact, ')
           ..write('isArchived: $isArchived, ')
@@ -801,6 +844,7 @@ class JobApplication extends DataClass implements Insertable<JobApplication> {
     expectedSalary,
     offeredSalary,
     vacancyUrl,
+    sourcePlatform,
     recruiterName,
     recruiterContact,
     isArchived,
@@ -825,6 +869,7 @@ class JobApplication extends DataClass implements Insertable<JobApplication> {
           other.expectedSalary == this.expectedSalary &&
           other.offeredSalary == this.offeredSalary &&
           other.vacancyUrl == this.vacancyUrl &&
+          other.sourcePlatform == this.sourcePlatform &&
           other.recruiterName == this.recruiterName &&
           other.recruiterContact == this.recruiterContact &&
           other.isArchived == this.isArchived &&
@@ -847,6 +892,7 @@ class JobApplicationsCompanion extends UpdateCompanion<JobApplication> {
   final Value<double?> expectedSalary;
   final Value<double?> offeredSalary;
   final Value<String?> vacancyUrl;
+  final Value<String?> sourcePlatform;
   final Value<String?> recruiterName;
   final Value<String?> recruiterContact;
   final Value<bool> isArchived;
@@ -868,6 +914,7 @@ class JobApplicationsCompanion extends UpdateCompanion<JobApplication> {
     this.expectedSalary = const Value.absent(),
     this.offeredSalary = const Value.absent(),
     this.vacancyUrl = const Value.absent(),
+    this.sourcePlatform = const Value.absent(),
     this.recruiterName = const Value.absent(),
     this.recruiterContact = const Value.absent(),
     this.isArchived = const Value.absent(),
@@ -890,6 +937,7 @@ class JobApplicationsCompanion extends UpdateCompanion<JobApplication> {
     this.expectedSalary = const Value.absent(),
     this.offeredSalary = const Value.absent(),
     this.vacancyUrl = const Value.absent(),
+    this.sourcePlatform = const Value.absent(),
     this.recruiterName = const Value.absent(),
     this.recruiterContact = const Value.absent(),
     this.isArchived = const Value.absent(),
@@ -916,6 +964,7 @@ class JobApplicationsCompanion extends UpdateCompanion<JobApplication> {
     Expression<double>? expectedSalary,
     Expression<double>? offeredSalary,
     Expression<String>? vacancyUrl,
+    Expression<String>? sourcePlatform,
     Expression<String>? recruiterName,
     Expression<String>? recruiterContact,
     Expression<bool>? isArchived,
@@ -938,6 +987,7 @@ class JobApplicationsCompanion extends UpdateCompanion<JobApplication> {
       if (expectedSalary != null) 'expected_salary': expectedSalary,
       if (offeredSalary != null) 'offered_salary': offeredSalary,
       if (vacancyUrl != null) 'vacancy_url': vacancyUrl,
+      if (sourcePlatform != null) 'source_platform': sourcePlatform,
       if (recruiterName != null) 'recruiter_name': recruiterName,
       if (recruiterContact != null) 'recruiter_contact': recruiterContact,
       if (isArchived != null) 'is_archived': isArchived,
@@ -962,6 +1012,7 @@ class JobApplicationsCompanion extends UpdateCompanion<JobApplication> {
     Value<double?>? expectedSalary,
     Value<double?>? offeredSalary,
     Value<String?>? vacancyUrl,
+    Value<String?>? sourcePlatform,
     Value<String?>? recruiterName,
     Value<String?>? recruiterContact,
     Value<bool>? isArchived,
@@ -984,6 +1035,7 @@ class JobApplicationsCompanion extends UpdateCompanion<JobApplication> {
       expectedSalary: expectedSalary ?? this.expectedSalary,
       offeredSalary: offeredSalary ?? this.offeredSalary,
       vacancyUrl: vacancyUrl ?? this.vacancyUrl,
+      sourcePlatform: sourcePlatform ?? this.sourcePlatform,
       recruiterName: recruiterName ?? this.recruiterName,
       recruiterContact: recruiterContact ?? this.recruiterContact,
       isArchived: isArchived ?? this.isArchived,
@@ -1036,6 +1088,9 @@ class JobApplicationsCompanion extends UpdateCompanion<JobApplication> {
     if (vacancyUrl.present) {
       map['vacancy_url'] = Variable<String>(vacancyUrl.value);
     }
+    if (sourcePlatform.present) {
+      map['source_platform'] = Variable<String>(sourcePlatform.value);
+    }
     if (recruiterName.present) {
       map['recruiter_name'] = Variable<String>(recruiterName.value);
     }
@@ -1076,6 +1131,7 @@ class JobApplicationsCompanion extends UpdateCompanion<JobApplication> {
           ..write('expectedSalary: $expectedSalary, ')
           ..write('offeredSalary: $offeredSalary, ')
           ..write('vacancyUrl: $vacancyUrl, ')
+          ..write('sourcePlatform: $sourcePlatform, ')
           ..write('recruiterName: $recruiterName, ')
           ..write('recruiterContact: $recruiterContact, ')
           ..write('isArchived: $isArchived, ')
@@ -2900,6 +2956,7 @@ typedef $$JobApplicationsTableCreateCompanionBuilder =
       Value<double?> expectedSalary,
       Value<double?> offeredSalary,
       Value<String?> vacancyUrl,
+      Value<String?> sourcePlatform,
       Value<String?> recruiterName,
       Value<String?> recruiterContact,
       Value<bool> isArchived,
@@ -2923,6 +2980,7 @@ typedef $$JobApplicationsTableUpdateCompanionBuilder =
       Value<double?> expectedSalary,
       Value<double?> offeredSalary,
       Value<String?> vacancyUrl,
+      Value<String?> sourcePlatform,
       Value<String?> recruiterName,
       Value<String?> recruiterContact,
       Value<bool> isArchived,
@@ -3106,6 +3164,11 @@ class $$JobApplicationsTableFilterComposer
 
   ColumnFilters<String> get vacancyUrl => $composableBuilder(
     column: $table.vacancyUrl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourcePlatform => $composableBuilder(
+    column: $table.sourcePlatform,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3314,6 +3377,11 @@ class $$JobApplicationsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get sourcePlatform => $composableBuilder(
+    column: $table.sourcePlatform,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get recruiterName => $composableBuilder(
     column: $table.recruiterName,
     builder: (column) => ColumnOrderings(column),
@@ -3404,6 +3472,11 @@ class $$JobApplicationsTableAnnotationComposer
 
   GeneratedColumn<String> get vacancyUrl => $composableBuilder(
     column: $table.vacancyUrl,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sourcePlatform => $composableBuilder(
+    column: $table.sourcePlatform,
     builder: (column) => column,
   );
 
@@ -3583,6 +3656,7 @@ class $$JobApplicationsTableTableManager
                 Value<double?> expectedSalary = const Value.absent(),
                 Value<double?> offeredSalary = const Value.absent(),
                 Value<String?> vacancyUrl = const Value.absent(),
+                Value<String?> sourcePlatform = const Value.absent(),
                 Value<String?> recruiterName = const Value.absent(),
                 Value<String?> recruiterContact = const Value.absent(),
                 Value<bool> isArchived = const Value.absent(),
@@ -3604,6 +3678,7 @@ class $$JobApplicationsTableTableManager
                 expectedSalary: expectedSalary,
                 offeredSalary: offeredSalary,
                 vacancyUrl: vacancyUrl,
+                sourcePlatform: sourcePlatform,
                 recruiterName: recruiterName,
                 recruiterContact: recruiterContact,
                 isArchived: isArchived,
@@ -3627,6 +3702,7 @@ class $$JobApplicationsTableTableManager
                 Value<double?> expectedSalary = const Value.absent(),
                 Value<double?> offeredSalary = const Value.absent(),
                 Value<String?> vacancyUrl = const Value.absent(),
+                Value<String?> sourcePlatform = const Value.absent(),
                 Value<String?> recruiterName = const Value.absent(),
                 Value<String?> recruiterContact = const Value.absent(),
                 Value<bool> isArchived = const Value.absent(),
@@ -3648,6 +3724,7 @@ class $$JobApplicationsTableTableManager
                 expectedSalary: expectedSalary,
                 offeredSalary: offeredSalary,
                 vacancyUrl: vacancyUrl,
+                sourcePlatform: sourcePlatform,
                 recruiterName: recruiterName,
                 recruiterContact: recruiterContact,
                 isArchived: isArchived,

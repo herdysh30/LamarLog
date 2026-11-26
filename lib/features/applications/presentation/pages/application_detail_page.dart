@@ -16,6 +16,8 @@ import '../../../../core/enums/application_enums.dart';
 import '../../../../core/l10n/app_strings.dart';
 import '../../../../core/layout/responsive.dart';
 import '../../../../core/services/notification_service.dart';
+import '../../../../core/utils/contact_launcher.dart';
+import '../../../../core/utils/stale_application_helper.dart';
 import '../../../../core/widgets/applyflow_widgets.dart';
 import '../bloc/applications_bloc.dart';
 import 'application_form_page.dart';
@@ -305,42 +307,72 @@ class _ApplicationDetailPageState extends State<ApplicationDetailPage> {
                     ],
                     const SizedBox(height: 12),
 
-                    // Applied date + Job type metadata
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    // Applied date + Job type + Source Platform metadata
+                    Wrap(
+                      alignment: WrapAlignment.spaceBetween,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 8,
+                      runSpacing: 8,
                       children: [
-                        Expanded(
-                          child: Row(
-                            children: [
-                              Icon(Icons.calendar_today_outlined,
-                                  size: 14, color: cs.secondary),
-                              const SizedBox(width: 6),
-                              Flexible(
-                                child: Text(
-                                  app.appliedAt != null
-                                      ? s.appliedOn(DateFormat('dd MMM yyyy')
-                                          .format(app.appliedAt!.toLocal()))
-                                      : s.notAppliedYet,
-                                  style: theme.textTheme.bodySmall,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.calendar_today_outlined,
+                                size: 14, color: cs.secondary),
+                            const SizedBox(width: 6),
+                            Text(
+                              app.appliedAt != null
+                                  ? s.appliedOn(DateFormat('dd MMM yyyy')
+                                      .format(app.appliedAt!.toLocal()))
+                                  : s.notAppliedYet,
+                              style: theme.textTheme.bodySmall,
+                            ),
+                          ],
+                        ),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: cs.surfaceContainer,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                s.jobTypeLabel(jobType),
+                                style: theme.textTheme.labelSmall,
+                              ),
+                            ),
+                            if (app.sourcePlatform?.trim().isNotEmpty ?? false)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: cs.secondaryContainer
+                                      .withValues(alpha: 0.7),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.public_rounded,
+                                        size: 12,
+                                        color: cs.onSecondaryContainer),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      app.sourcePlatform!.trim(),
+                                      style: theme.textTheme.labelSmall
+                                          ?.copyWith(
+                                        color: cs.onSecondaryContainer,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: cs.surfaceContainer,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            s.jobTypeLabel(jobType),
-                            style: theme.textTheme.labelSmall,
-                          ),
+                          ],
                         ),
                       ],
                     ),
@@ -353,7 +385,7 @@ class _ApplicationDetailPageState extends State<ApplicationDetailPage> {
                         child: Divider(),
                       ),
                       if ((app.recruiterName?.isNotEmpty ?? false) ||
-                          (app.recruiterContact?.isNotEmpty ?? false))
+                          (app.recruiterContact?.isNotEmpty ?? false)) ...[
                         Row(
                           children: [
                             Icon(Icons.person_outline_rounded,
@@ -369,29 +401,59 @@ class _ApplicationDetailPageState extends State<ApplicationDetailPage> {
                                 ].join(' • '),
                                 style: theme.textTheme.bodySmall
                                     ?.copyWith(color: cs.onSurface),
-                                maxLines: 1,
+                                maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
                         ),
+                        if (app.recruiterContact?.trim().isNotEmpty ?? false) ...[
+                          const SizedBox(height: 8),
+                          _buildRecruiterActions(
+                            context,
+                            app.recruiterContact!.trim(),
+                            s,
+                          ),
+                        ],
+                      ],
                       if (app.vacancyUrl?.isNotEmpty ?? false) ...[
                         if ((app.recruiterName?.isNotEmpty ?? false) ||
                             (app.recruiterContact?.isNotEmpty ?? false))
-                          const SizedBox(height: 6),
+                          const SizedBox(height: 8),
                         Row(
                           children: [
                             Icon(Icons.link_rounded,
                                 size: 16, color: cs.secondary),
                             const SizedBox(width: 8),
                             Expanded(
-                              child: Text(
-                                app.vacancyUrl!,
-                                style: theme.textTheme.bodySmall
-                                    ?.copyWith(color: cs.primary),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(6),
+                                onTap: () =>
+                                    _openRawLink(context, app.vacancyUrl!, s),
+                                child: Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 4),
+                                  child: Text(
+                                    app.vacancyUrl!,
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: cs.primary,
+                                      decoration: TextDecoration.underline,
+                                      decorationColor:
+                                          cs.primary.withValues(alpha: 0.5),
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
                               ),
+                            ),
+                            IconButton(
+                              visualDensity: VisualDensity.compact,
+                              tooltip: s.openLink,
+                              icon: Icon(Icons.open_in_new_rounded,
+                                  size: 17, color: cs.primary),
+                              onPressed: () =>
+                                  _openRawLink(context, app.vacancyUrl!, s),
                             ),
                             IconButton(
                               visualDensity: VisualDensity.compact,
@@ -486,6 +548,94 @@ class _ApplicationDetailPageState extends State<ApplicationDetailPage> {
                 ),
               ),
               const SizedBox(height: 14),
+
+              // STALE FOLLOW-UP CALLOUT (only when >=14 days without update in Applied/Screening)
+              if (StaleApplicationHelper.isStale(app)) ...[
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: brightness == Brightness.dark
+                        ? const Color(0xFF3E2C0A)
+                        : const Color(0xFFFFF4D6),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.notifications_active_outlined,
+                            size: 18,
+                            color: brightness == Brightness.dark
+                                ? const Color(0xFFFCD34D)
+                                : const Color(0xFF92400E),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              s.staleDetailTitle(
+                                StaleApplicationHelper.daysSinceUpdate(app),
+                              ),
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                color: brightness == Brightness.dark
+                                    ? const Color(0xFFFDE68A)
+                                    : const Color(0xFF78350F),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        s.staleDetailBody,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: brightness == Brightness.dark
+                              ? const Color(0xFFFCD34D).withValues(alpha: 0.9)
+                              : const Color(0xFF92400E),
+                          height: 1.35,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          FilledButton.icon(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: cs.primaryContainer,
+                              foregroundColor: Colors.white,
+                              minimumSize: const Size(0, 40),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 12),
+                            ),
+                            onPressed: () => _logFollowUp(context, db, app, s),
+                            icon: const Icon(Icons.send_rounded, size: 16),
+                            label: Text(s.logFollowUpBtn),
+                          ),
+                          OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              minimumSize: const Size(0, 40),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 12),
+                            ),
+                            onPressed: () {
+                              context.read<ApplicationsBloc>().add(
+                                    MoveApplicationStatus(
+                                      application: app,
+                                      newStatus: ApplicationStatus.noResponse,
+                                    ),
+                                  );
+                            },
+                            child: Text(s.markNoResponseBtn),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+              ],
 
               // INTERVIEW SCHEDULE CARD
               StreamBuilder<List<InterviewSchedule>>(
@@ -1555,6 +1705,155 @@ class _ApplicationDetailPageState extends State<ApplicationDetailPage> {
         ],
       ),
     );
+  }
+
+  Widget _buildRecruiterActions(
+    BuildContext context,
+    String contact,
+    AppStrings s,
+  ) {
+    final parsed = ContactLauncher.parse(contact);
+    final cs = Theme.of(context).colorScheme;
+
+    Widget actionPill({
+      required IconData icon,
+      required String label,
+      required VoidCallback onTap,
+      bool primary = false,
+    }) {
+      return Material(
+        color: primary ? cs.primaryFixed : cs.surfaceContainer,
+        borderRadius: BorderRadius.circular(999),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(999),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  icon,
+                  size: 14,
+                  color: primary ? cs.onPrimaryFixed : cs.onSurfaceVariant,
+                ),
+                const SizedBox(width: 5),
+                Text(
+                  label,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color:
+                            primary ? cs.onPrimaryFixed : cs.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Wrap(
+      spacing: 6,
+      runSpacing: 6,
+      children: [
+        if (parsed.kind == ContactKind.email && parsed.primaryUri != null)
+          actionPill(
+            icon: Icons.mail_outline_rounded,
+            label: s.sendEmail,
+            primary: true,
+            onTap: () => _launchUriWithFeedback(context, parsed.primaryUri!, s),
+          ),
+        if (parsed.kind == ContactKind.phone && parsed.whatsappUri != null)
+          actionPill(
+            icon: Icons.chat_outlined,
+            label: s.chatWhatsApp,
+            primary: true,
+            onTap: () =>
+                _launchUriWithFeedback(context, parsed.whatsappUri!, s),
+          ),
+        if (parsed.kind == ContactKind.phone && parsed.primaryUri != null)
+          actionPill(
+            icon: Icons.call_outlined,
+            label: s.callPhone,
+            onTap: () => _launchUriWithFeedback(context, parsed.primaryUri!, s),
+          ),
+        if (parsed.kind == ContactKind.url && parsed.primaryUri != null)
+          actionPill(
+            icon: Icons.open_in_new_rounded,
+            label: s.openLink,
+            primary: true,
+            onTap: () => _launchUriWithFeedback(context, parsed.primaryUri!, s),
+          ),
+        actionPill(
+          icon: Icons.content_copy_rounded,
+          label: s.copyAction,
+          onTap: () {
+            Clipboard.setData(ClipboardData(text: contact));
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(s.copiedToClipboard)),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Future<void> _openRawLink(
+    BuildContext context,
+    String raw,
+    AppStrings s,
+  ) async {
+    final parsed = ContactLauncher.parse(raw);
+    if (parsed.primaryUri == null) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(s.couldNotOpenLink)),
+        );
+      }
+      return;
+    }
+    await _launchUriWithFeedback(context, parsed.primaryUri!, s);
+  }
+
+  Future<void> _launchUriWithFeedback(
+    BuildContext context,
+    Uri uri,
+    AppStrings s,
+  ) async {
+    final ok = await ContactLauncher.launch(uri);
+    if (!ok && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(s.couldNotOpenLink)),
+      );
+    }
+  }
+
+  Future<void> _logFollowUp(
+    BuildContext context,
+    AppDatabase db,
+    JobApplication app,
+    AppStrings s,
+  ) async {
+    await db.insertTimelineLog(
+      TimelineLogsCompanion.insert(
+        id: _uuid.v4(),
+        applicationId: app.id,
+        title: s.isId ? 'Follow-up terkirim' : 'Follow-up sent',
+        note: Value(
+          s.isId
+              ? 'Mengirim pesan follow-up terkait perkembangan lamaran.'
+              : 'Sent a polite follow-up regarding application status.',
+        ),
+        loggedAt: DateTime.now().toUtc(),
+      ),
+    );
+    await db.touchApplicationUpdatedAt(app.id);
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(s.followUpLoggedMsg)),
+      );
+    }
   }
 
   void _confirmDelete(BuildContext context, JobApplication app) {

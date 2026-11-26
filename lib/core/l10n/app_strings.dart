@@ -371,6 +371,83 @@ class AppStrings {
   String get clearAllData => isId ? 'Hapus Semua Data' : 'Clear All Data';
   String get selectLanguage => isId ? 'Pilih Bahasa' : 'Select Language';
 
+  // Application Platform (Source)
+  String get sourcePlatform =>
+      isId ? 'Platform Lamaran (Opsional)' : 'Application Platform (Optional)';
+  String get sourcePlatformHint =>
+      isId ? 'Contoh: LinkedIn, Glints, JobStreet' : 'e.g. LinkedIn, Glints, Referral';
+  String get platformLabel => isId ? 'Platform' : 'Platform';
+  List<String> get platformPresets => isId
+      ? const [
+          'LinkedIn',
+          'Glints',
+          'JobStreet',
+          'Kalibrr',
+          'Dealls',
+          'Website Perusahaan',
+          'Referral',
+          'Email',
+        ]
+      : const [
+          'LinkedIn',
+          'Glints',
+          'JobStreet',
+          'Kalibrr',
+          'Dealls',
+          'Company Site',
+          'Referral',
+          'Email',
+        ];
+
+  // Direct contact & URL launcher
+  String get openLink => isId ? 'Buka Tautan' : 'Open Link';
+  String get sendEmail => isId ? 'Kirim Email' : 'Send Email';
+  String get callPhone => isId ? 'Telepon' : 'Call';
+  String get chatWhatsApp => isId ? 'WhatsApp' : 'WhatsApp';
+  String get copyAction => isId ? 'Salin' : 'Copy';
+  String get copiedToClipboard =>
+      isId ? 'Disalin ke clipboard' : 'Copied to clipboard';
+  String get couldNotOpenLink =>
+      isId ? 'Tidak dapat membuka tautan ini.' : 'Could not open this link.';
+
+  // Stale application follow-up
+  String needsFollowUpBadge(int days) =>
+      isId ? 'Follow-up • ${days}h' : 'Follow-up • ${days}d';
+  String staleBannerTitle(int count) => isId
+      ? '$count lamaran belum ada kabar (≥14 hari)'
+      : '$count applications awaiting reply (≥14 days)';
+  String get staleBannerSub => isId
+      ? 'Ketuk untuk melihat lamaran yang perlu di-follow-up'
+      : 'Tap to filter applications that need a follow-up';
+  String staleDetailTitle(int days) => isId
+      ? 'Sudah $days hari tanpa pembaruan'
+      : 'No updates for $days days';
+  String get staleDetailBody => isId
+      ? 'Pertimbangkan kirim pesan follow-up ke rekruter atau pindahkan ke Tanpa Respon jika sudah tidak ada kabar.'
+      : 'Consider sending a polite follow-up to the recruiter or moving this to No Response.';
+  String get logFollowUpBtn =>
+      isId ? 'Catat Follow-up' : 'Log Follow-up';
+  String get markNoResponseBtn =>
+      isId ? 'Tanpa Respon' : 'No Response';
+  String get followUpLoggedMsg =>
+      isId ? 'Follow-up dicatat di linimasa!' : 'Follow-up logged to timeline!';
+  String get staleOnlyFilter =>
+      isId ? 'Hanya Perlu Follow-up (≥14h)' : 'Needs Follow-up Only (≥14d)';
+
+  // CSV Export
+  String get exportCsv =>
+      isId ? 'Ekspor Spreadsheet (.csv)' : 'Export Spreadsheet (.csv)';
+  String get exportCsvSub => isId
+      ? 'Simpan daftar lamaran dalam format CSV untuk Excel / Sheets'
+      : 'Save applications table as CSV for Excel / Google Sheets';
+  String get csvSaved =>
+      isId ? 'File CSV berhasil disimpan!' : 'CSV file saved successfully!';
+  String get csvCancelled =>
+      isId ? 'Ekspor CSV dibatalkan.' : 'CSV export cancelled.';
+  String get csvEmpty => isId
+      ? 'Belum ada lamaran untuk diekspor.'
+      : 'No applications to export yet.';
+
   // Enum labels (checks custom Kanban column names first)
   String defaultStatusLabel(ApplicationStatus status) {
     if (!isId) return status.label;

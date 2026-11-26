@@ -1,5 +1,5 @@
 name: applyflow
-description: "A new Flutter project."
+description: "Offline-first Flutter job application tracker with Kanban pipeline, interview reminders, and funnel analytics."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -47,6 +47,7 @@ dependencies:
   flutter_local_notifications: ^22.3.3
   timezone: ^0.11.2
   shared_preferences: ^2.5.6
+  url_launcher: ^6.3.1
 
 dev_dependencies:
   flutter_test:
@@ -62,17 +63,38 @@ dev_dependencies:
   build_runner: ^2.15.1
   bloc_test: ^10.0.1
   mocktail: ^1.0.5
+  flutter_launcher_icons: ^0.14.3
+  flutter_native_splash: ^2.4.4
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
 # The following section is specific to Flutter packages.
 flutter:
-
-  # The following line ensures that the Material Icons font is
-  # included with your application, so that you can use the icons in
-  # the material Icons class.
   uses-material-design: true
+  assets:
+    - assets/icon/
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/app_icon.png"
+  adaptive_icon_background: "#3525CD"
+  adaptive_icon_foreground: "assets/icon/app_icon.png"
+  remove_alpha_ios: true
+
+flutter_native_splash:
+  color: "#FAF8FF"
+  color_dark: "#0F1420"
+  image: "assets/icon/splash_icon.png"
+  image_dark: "assets/icon/splash_icon.png"
+  android_12:
+    color: "#FAF8FF"
+    color_dark: "#0F1420"
+    image: "assets/icon/splash_icon.png"
+    image_dark: "assets/icon/splash_icon.png"
+  ios: true
+  web: false
 
   # To add assets to your application, add an assets section, like this:
   # assets:

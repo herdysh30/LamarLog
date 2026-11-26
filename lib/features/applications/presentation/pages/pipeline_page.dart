@@ -223,6 +223,96 @@ class _PipelinePageState extends State<PipelinePage> {
                             ],
                           ),
                         ),
+                        if (state.staleApplications.isNotEmpty ||
+                            state.staleOnlyFilter) ...[
+                          const SizedBox(height: 10),
+                          Material(
+                            color: state.staleOnlyFilter
+                                ? cs.primaryContainer
+                                : (theme.brightness == Brightness.dark
+                                    ? const Color(0xFF3E2C0A)
+                                    : const Color(0xFFFFF4D6)),
+                            borderRadius: BorderRadius.circular(12),
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(12),
+                              onTap: () => context
+                                  .read<ApplicationsBloc>()
+                                  .add(const ToggleStaleFilter()),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 10),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      state.staleOnlyFilter
+                                          ? Icons.filter_alt_rounded
+                                          : Icons.notifications_active_outlined,
+                                      size: 18,
+                                      color: state.staleOnlyFilter
+                                          ? Colors.white
+                                          : (theme.brightness == Brightness.dark
+                                              ? const Color(0xFFFCD34D)
+                                              : const Color(0xFF92400E)),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            s.staleBannerTitle(
+                                                state.staleApplications.length),
+                                            style: theme.textTheme.labelMedium
+                                                ?.copyWith(
+                                              color: state.staleOnlyFilter
+                                                  ? Colors.white
+                                                  : (theme.brightness ==
+                                                          Brightness.dark
+                                                      ? const Color(0xFFFDE68A)
+                                                      : const Color(0xFF78350F)),
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                          Text(
+                                            s.staleBannerSub,
+                                            style: theme.textTheme.labelSmall
+                                                ?.copyWith(
+                                              color: state.staleOnlyFilter
+                                                  ? Colors.white
+                                                      .withValues(alpha: 0.85)
+                                                  : (theme.brightness ==
+                                                          Brightness.dark
+                                                      ? const Color(0xFFFCD34D)
+                                                          .withValues(
+                                                              alpha: 0.85)
+                                                      : const Color(0xFF92400E)
+                                                          .withValues(
+                                                              alpha: 0.85)),
+                                              fontWeight: FontWeight.w400,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Icon(
+                                      state.staleOnlyFilter
+                                          ? Icons.close_rounded
+                                          : Icons.chevron_right_rounded,
+                                      size: 18,
+                                      color: state.staleOnlyFilter
+                                          ? Colors.white
+                                          : (theme.brightness == Brightness.dark
+                                              ? const Color(0xFFFCD34D)
+                                              : const Color(0xFF92400E)),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -397,6 +487,7 @@ class _PipelinePageState extends State<PipelinePage> {
   void _showFilterSheet(BuildContext context, ApplicationsState state) {
     WorkplaceType? selectedWorkplace = state.workplaceFilter;
     PriorityLevel? selectedPriority = state.priorityFilter;
+    bool selectedStaleOnly = state.staleOnlyFilter;
     PipelineSortOption selectedSort = state.sortOption;
     final s = AppLocaleScope.of(context);
 
@@ -472,6 +563,14 @@ class _PipelinePageState extends State<PipelinePage> {
                   ],
                 ),
                 const SizedBox(height: 16),
+                SwitchListTile.adaptive(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(s.staleOnlyFilter,
+                      style: theme.textTheme.labelLarge),
+                  value: selectedStaleOnly,
+                  onChanged: (v) => setSheetState(() => selectedStaleOnly = v),
+                ),
+                const SizedBox(height: 8),
                 Text(s.sorting, style: theme.textTheme.labelMedium),
                 const SizedBox(height: 8),
                 Wrap(
@@ -527,6 +626,7 @@ class _PipelinePageState extends State<PipelinePage> {
                                   UpdateFilters(
                                     workplaceFilter: selectedWorkplace,
                                     priorityFilter: selectedPriority,
+                                    staleOnlyFilter: selectedStaleOnly,
                                     sortOption: selectedSort,
                                   ),
                                 );

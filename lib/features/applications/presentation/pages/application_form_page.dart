@@ -37,6 +37,7 @@ class _ApplicationFormPageState extends State<ApplicationFormPage> {
   late final TextEditingController _salaryCtrl;
   late final TextEditingController _offeredSalaryCtrl;
   late final TextEditingController _urlCtrl;
+  late final TextEditingController _platformCtrl;
   late final TextEditingController _recruiterNameCtrl;
   late final TextEditingController _recruiterContactCtrl;
 
@@ -66,6 +67,7 @@ class _ApplicationFormPageState extends State<ApplicationFormPage> {
           : '',
     );
     _urlCtrl = TextEditingController(text: app?.vacancyUrl ?? '');
+    _platformCtrl = TextEditingController(text: app?.sourcePlatform ?? '');
     _recruiterNameCtrl = TextEditingController(text: app?.recruiterName ?? '');
     _recruiterContactCtrl =
         TextEditingController(text: app?.recruiterContact ?? '');
@@ -104,6 +106,7 @@ class _ApplicationFormPageState extends State<ApplicationFormPage> {
     _salaryCtrl.dispose();
     _offeredSalaryCtrl.dispose();
     _urlCtrl.dispose();
+    _platformCtrl.dispose();
     _recruiterNameCtrl.dispose();
     _recruiterContactCtrl.dispose();
     super.dispose();
@@ -598,6 +601,60 @@ class _ApplicationFormPageState extends State<ApplicationFormPage> {
                     ),
                   ],
                   const SizedBox(height: 14),
+                  Text(s.sourcePlatform, style: theme.textTheme.labelLarge),
+                  const SizedBox(height: 6),
+                  TextFormField(
+                    controller: _platformCtrl,
+                    textCapitalization: TextCapitalization.words,
+                    onChanged: (_) => setState(() {}),
+                    decoration: InputDecoration(
+                      hintText: s.sourcePlatformHint,
+                      prefixIcon: const Icon(Icons.public_rounded, size: 20),
+                      suffixIcon: _platformCtrl.text.isNotEmpty
+                          ? IconButton(
+                              tooltip: 'Clear',
+                              icon: const Icon(Icons.close_rounded, size: 18),
+                              onPressed: () {
+                                _platformCtrl.clear();
+                                setState(() {});
+                              },
+                            )
+                          : null,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: s.platformPresets.map((preset) {
+                      final selected = _platformCtrl.text.trim().toLowerCase() ==
+                          preset.toLowerCase();
+                      return ChoiceChip(
+                        label: Text(preset),
+                        selected: selected,
+                        showCheckmark: false,
+                        selectedColor: cs.primaryContainer,
+                        labelStyle: TextStyle(
+                          fontSize: 12,
+                          color: selected ? Colors.white : cs.onSurfaceVariant,
+                          fontWeight:
+                              selected ? FontWeight.w600 : FontWeight.w500,
+                        ),
+                        backgroundColor: cs.surfaceContainer,
+                        side: BorderSide.none,
+                        visualDensity: VisualDensity.compact,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        onSelected: (isSel) {
+                          setState(() {
+                            _platformCtrl.text = isSel ? preset : '';
+                          });
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 14),
                   Text(s.jobVacancyLink, style: theme.textTheme.labelLarge),
                   const SizedBox(height: 6),
                   TextFormField(
@@ -709,6 +766,8 @@ class _ApplicationFormPageState extends State<ApplicationFormPage> {
       _offeredSalaryCtrl.text.replaceAll(RegExp(r'[^0-9.]'), ''),
     );
     final url = _urlCtrl.text.trim().isEmpty ? null : _urlCtrl.text.trim();
+    final platform =
+        _platformCtrl.text.trim().isEmpty ? null : _platformCtrl.text.trim();
     final recName = _recruiterNameCtrl.text.trim().isEmpty
         ? null
         : _recruiterNameCtrl.text.trim();
@@ -732,6 +791,7 @@ class _ApplicationFormPageState extends State<ApplicationFormPage> {
               expectedSalary: parsedSalary,
               offeredSalary: parsedOffered,
               vacancyUrl: url,
+              sourcePlatform: platform,
               recruiterName: recName,
               recruiterContact: recContact,
             ),
@@ -751,6 +811,7 @@ class _ApplicationFormPageState extends State<ApplicationFormPage> {
               expectedSalary: parsedSalary,
               offeredSalary: parsedOffered,
               vacancyUrl: url,
+              sourcePlatform: platform,
               recruiterName: recName,
               recruiterContact: recContact,
             ),

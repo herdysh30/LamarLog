@@ -8,8 +8,7 @@ import '../../../../core/l10n/app_strings.dart';
 import '../../../../core/layout/responsive.dart';
 import '../../../../core/widgets/applyflow_widgets.dart';
 import '../../../applications/presentation/bloc/applications_bloc.dart';
-
-enum _AnalyticsPeriod { allTime, days30, days90 }
+import '../../domain/analytics_calculator.dart';
 
 class AnalyticsPage extends StatefulWidget {
   const AnalyticsPage({super.key});
@@ -19,7 +18,7 @@ class AnalyticsPage extends StatefulWidget {
 }
 
 class _AnalyticsPageState extends State<AnalyticsPage> {
-  _AnalyticsPeriod _period = _AnalyticsPeriod.allTime;
+  AnalyticsPeriod _period = AnalyticsPeriod.allTime;
 
   @override
   Widget build(BuildContext context) {
@@ -40,8 +39,9 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
           }
 
           final allTransitions = snapshot.data ?? const <StatusTransition>[];
-          final filtered = _filterByPeriod(allTransitions, _period);
-          final metrics = _computeMetrics(filtered);
+          final filtered =
+              AnalyticsCalculator.filterByPeriod(allTransitions, _period);
+          final metrics = AnalyticsCalculator.computeMetrics(filtered);
           final apps = context.watch<ApplicationsBloc>().state.applications;
           final insight = _buildInsight(apps, metrics, s);
 
@@ -65,12 +65,12 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
-                  children: _AnalyticsPeriod.values.map((p) {
+                  children: AnalyticsPeriod.values.map((p) {
                     final selected = _period == p;
                     final label = switch (p) {
-                      _AnalyticsPeriod.allTime => s.allTime,
-                      _AnalyticsPeriod.days30 => s.past30Days,
-                      _AnalyticsPeriod.days90 => s.past90Days,
+                      AnalyticsPeriod.allTime => s.allTime,
+                      AnalyticsPeriod.days30 => s.past30Days,
+                      AnalyticsPeriod.days90 => s.past90Days,
                     };
                     return Padding(
                       padding: const EdgeInsets.only(right: 8),
@@ -394,116 +394,9 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     );
   }
 
-  List<StatusTransition> _filterByPeriod(
-    List<StatusTransition> transitions,
-    _AnalyticsPeriod period,
-  ) {
-    if (period == _AnalyticsPeriod.allTime) return transitions;
-    final days = period == _AnalyticsPeriod.days30 ? 30 : 90;
-    final cutoff = DateTime.now().toUtc().subtract(Duration(days: days));
-    return transitions.where((t) => t.transitionedAt.isAfter(cutoff)).toList();
-  }
-
-  _FunnelMetrics _computeMetrics(List<StatusTransition> transitions) {
-    final byApp = <String, List<StatusTransition>>{};
-    for (final t in transitions) {
-      byApp.putIfAbsent(t.applicationId, () => []).add(t);
-    }
-
-    final appliedAppIds = <String>{};
-    final interviewAppIds = <String>{};
-    final offerAppIds = <String>{};
-    final stageCounts = <String, int>{};
-    final responseDaysList = <double>[];
-    final appliedToScreen = <double>[];
-    final screenToInterview = <double>[];
-    final interviewToOffer = <double>[];
-
-    for (final entry in byApp.entries) {
-      final appId = entry.key;
-      final list = entry.value
-        ..sort((a, b) => a.transitionedAt.compareTo(b.transitionedAt));
-
-      final statusesReached = list.map((e) => e.toStatus).toSet();
-      for (final s in statusesReached) {
-        stageCounts[s] = (stageCounts[s] ?? 0) + 1;
-      }
-
-      final everApplied =
-          statusesReached.any((s) => s != ApplicationStatus.wishlist.name);
-      if (everApplied) appliedAppIds.add(appId);
-
-      if (statusesReached.contains(ApplicationStatus.interview.name)) {
-        interviewAppIds.add(appId);
-      }
-      if (statusesReached.contains(ApplicationStatus.offering.name) ||
-          statusesReached.contains(ApplicationStatus.offerAccepted.name)) {
-        offerAppIds.add(appId);
-      }
-
-      DateTime? firstAt(String status) => list
-          .where((t) => t.toStatus == status)
-          .firstOrNull
-          ?.transitionedAt;
-
-      final tApplied = firstAt(ApplicationStatus.applied.name);
-      final tScreen = firstAt(ApplicationStatus.screening.name);
-      final tInterview = firstAt(ApplicationStatus.interview.name);
-      final tOffer = firstAt(ApplicationStatus.offering.name);
-
-      if (tApplied != null) {
-        final firstResponse = list
-            .where((t) =>
-                t.transitionedAt.isAfter(tApplied) &&
-                (t.toStatus == ApplicationStatus.screening.name ||
-                    t.toStatus == ApplicationStatus.interview.name ||
-                    t.toStatus == ApplicationStatus.offering.name ||
-                    t.toStatus == ApplicationStatus.rejected.name))
-            .firstOrNull;
-        if (firstResponse != null) {
-          responseDaysList.add(
-              firstResponse.transitionedAt.difference(tApplied).inHours / 24.0);
-        }
-      }
-      if (tApplied != null && tScreen != null && tScreen.isAfter(tApplied)) {
-        appliedToScreen.add(tScreen.difference(tApplied).inHours / 24.0);
-      }
-      if (tScreen != null &&
-          tInterview != null &&
-          tInterview.isAfter(tScreen)) {
-        screenToInterview.add(tInterview.difference(tScreen).inHours / 24.0);
-      }
-      if (tInterview != null && tOffer != null && tOffer.isAfter(tInterview)) {
-        interviewToOffer.add(tOffer.difference(tInterview).inHours / 24.0);
-      }
-    }
-
-    double? avg(List<double> values) => values.isEmpty
-        ? null
-        : values.reduce((a, b) => a + b) / values.length;
-
-    final totalApplied = appliedAppIds.length;
-    return _FunnelMetrics(
-      totalTracked: byApp.length,
-      totalApplied: totalApplied,
-      interviewCount: interviewAppIds.length,
-      offerCount: offerAppIds.length,
-      interviewRate: totalApplied == 0
-          ? 0.0
-          : (interviewAppIds.length / totalApplied) * 100,
-      offerRate:
-          totalApplied == 0 ? 0.0 : (offerAppIds.length / totalApplied) * 100,
-      avgResponseDays: avg(responseDaysList),
-      appliedToScreenDays: avg(appliedToScreen),
-      screenToInterviewDays: avg(screenToInterview),
-      interviewToOfferDays: avg(interviewToOffer),
-      stageCounts: stageCounts,
-    );
-  }
-
   String _buildInsight(
     List<JobApplication> apps,
-    _FunnelMetrics metrics,
+    FunnelMetrics metrics,
     AppStrings s,
   ) {
     if (metrics.totalTracked == 0) {
@@ -529,34 +422,6 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
         ? 'Kamu telah melamar ${metrics.totalApplied} posisi dengan rasio interview ${metrics.interviewRate.toStringAsFixed(1)}%. Menyesuaikan CV per lowongan dapat meningkatkan lolos screening.'
         : 'You have applied to ${metrics.totalApplied} roles with a ${metrics.interviewRate.toStringAsFixed(1)}% interview rate. Attaching role-specific CVs can help lift screening conversion.';
   }
-}
-
-class _FunnelMetrics {
-  const _FunnelMetrics({
-    required this.totalTracked,
-    required this.totalApplied,
-    required this.interviewCount,
-    required this.offerCount,
-    required this.interviewRate,
-    required this.offerRate,
-    required this.avgResponseDays,
-    required this.appliedToScreenDays,
-    required this.screenToInterviewDays,
-    required this.interviewToOfferDays,
-    required this.stageCounts,
-  });
-
-  final int totalTracked;
-  final int totalApplied;
-  final int interviewCount;
-  final int offerCount;
-  final double interviewRate;
-  final double offerRate;
-  final double? avgResponseDays;
-  final double? appliedToScreenDays;
-  final double? screenToInterviewDays;
-  final double? interviewToOfferDays;
-  final Map<String, int> stageCounts;
 }
 
 class _KpiCard extends StatelessWidget {

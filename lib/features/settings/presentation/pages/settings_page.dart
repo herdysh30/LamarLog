@@ -14,6 +14,7 @@ import '../../../../core/database/app_database.dart';
 import '../../../../core/enums/application_enums.dart';
 import '../../../../core/l10n/app_strings.dart';
 import '../../../../core/layout/responsive.dart';
+import '../../../../core/utils/csv_exporter.dart';
 import '../../../../core/widgets/applyflow_widgets.dart';
 import '../../../applications/presentation/bloc/applications_bloc.dart';
 
@@ -469,6 +470,17 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 const SizedBox(height: 10),
 
+                // Export CSV Action Tile
+                _VaultActionTile(
+                  icon: Icons.table_chart_outlined,
+                  iconBg: cs.tertiaryContainer.withValues(alpha: 0.2),
+                  iconFg: cs.tertiary,
+                  title: s.exportCsv,
+                  subtitle: s.exportCsvSub,
+                  onTap: () => _exportCsv(context),
+                ),
+                const SizedBox(height: 10),
+
                 // Restore Action Tile
                 _VaultActionTile(
                   icon: Icons.upload_file_outlined,
@@ -844,6 +856,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 'expectedSalary': a.expectedSalary,
                 'offeredSalary': a.offeredSalary,
                 'vacancyUrl': a.vacancyUrl,
+                'sourcePlatform': a.sourcePlatform,
                 'recruiterName': a.recruiterName,
                 'recruiterContact': a.recruiterContact,
                 'isArchived': a.isArchived,
@@ -898,6 +911,43 @@ class _SettingsPageState extends State<SettingsPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(savedUri != null ? s.backupSaved : s.backupCancelled),
+        ),
+      );
+    }
+  }
+
+  Future<void> _exportCsv(BuildContext context) async {
+    final s = AppLocaleScope.of(context);
+    final db = context.read<AppDatabase>();
+    final apps = await db.getAllApplications();
+    if (apps.isEmpty) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(s.csvEmpty)),
+        );
+      }
+      return;
+    }
+
+    final csvString = CsvExporter.buildApplicationsCsv(
+      apps,
+      customStageNames: widget.customStageNames,
+    );
+    final bytes = Uint8List.fromList(utf8.encode(csvString));
+    final dateTag = DateTime.now().toIso8601String().substring(0, 10);
+    final fileName = 'applyflow_applications_$dateTag.csv';
+
+    final savedUri = await FilePicker.saveFile(
+      dialogTitle: s.exportCsv,
+      fileName: fileName,
+      bytes: bytes,
+      mimeType: 'text/csv',
+    );
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(savedUri != null ? s.csvSaved : s.csvCancelled),
         ),
       );
     }
@@ -978,6 +1028,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   offeredSalary:
                       Value((m['offeredSalary'] as num?)?.toDouble()),
                   vacancyUrl: Value(m['vacancyUrl'] as String?),
+                  sourcePlatform: Value(m['sourcePlatform'] as String?),
                   recruiterName: Value(m['recruiterName'] as String?),
                   recruiterContact: Value(m['recruiterContact'] as String?),
                   isArchived: Value((m['isArchived'] as bool?) ?? false),
