@@ -2,6 +2,14 @@
 
 All notable changes to **LamarLog** (formerly ApplyFlow) are documented in this file.
 
+## [1.3.1] - 2026-11-26
+
+### Fixed
+- **Analytics Wishlist Revert Accuracy:** Moving an application from Wishlist to Applied and back to Wishlist no longer counts reverted transitions as Applied, and resets `appliedAt` cleanly.
+- **Landscape Kanban Overflow & Compact Sidebar Layout:** Moved the LamarLog brand mark to the top of the side `NavigationRail` in landscape/tablet layouts, removed the duplicate top AppBar, compacted the Pipeline toolbar into a single responsive row, and made Kanban columns overflow-proof across narrow, landscape, and large-font viewports.
+- **Immediate Persist on Add Stage:** Saving in the Add Stage dialog now immediately persists the new stage without requiring a second Save in Manage Pipeline Stages (keeping Manage Save dedicated to rename, recolor, reorder, and delete).
+- **Zero-Overflow Hardening:** Fixed layout overflows across application cards, detail/form headers, settings sub-pages, onboarding, filter/archive/reminder sheets, and interview/note dialogs (verified across 9 portrait, landscape, tablet, and large-font viewports).
+
 ## [1.3.0] - 2026-11-26
 
 ### Added

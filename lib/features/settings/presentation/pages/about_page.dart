@@ -10,7 +10,7 @@ import '../../../../core/widgets/send_report_dialog.dart';
 class AboutPage extends StatelessWidget {
   const AboutPage({super.key});
 
-  static const String appVersion = '1.3.0';
+  static const String appVersion = '1.3.1';
   static final Uri _repoUri =
       Uri.parse('https://github.com/herdysh30/LamarLog');
   static final Uri _releasesUri =
