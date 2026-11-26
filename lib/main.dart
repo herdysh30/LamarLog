@@ -10,6 +10,7 @@ import 'app/theme/app_theme.dart';
 import 'core/database/app_database.dart';
 import 'core/l10n/app_strings.dart';
 import 'core/models/pipeline_stage_config.dart';
+import 'core/motion/app_motion.dart';
 import 'core/services/preferences_service.dart';
 import 'features/applications/presentation/bloc/applications_bloc.dart';
 import 'features/onboarding/presentation/pages/onboarding_page.dart';
@@ -186,6 +187,8 @@ class _ApplyFlowAppState extends State<ApplyFlowApp> {
             theme: AppTheme.light(_colorPalette),
             darkTheme: AppTheme.dark(_colorPalette),
             themeMode: _themeMode,
+            themeAnimationDuration: AppMotion.themeSwitch,
+            themeAnimationCurve: AppMotion.standardCurve,
             home: _hasCompletedOnboarding
                 ? AppShell(
                     themeMode: _themeMode,

@@ -5,6 +5,7 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../core/database/app_database.dart';
 import '../../../../core/enums/application_enums.dart';
 import '../../../../core/l10n/app_strings.dart';
+import '../../../../core/motion/app_motion.dart';
 import '../../../../core/utils/stale_application_helper.dart';
 import '../../../../core/widgets/applyflow_widgets.dart';
 
@@ -14,12 +15,14 @@ class ApplicationCard extends StatelessWidget {
     required this.application,
     this.upcomingInterview,
     this.showStatusChip = false,
+    this.enableHero = true,
     this.onTap,
   });
 
   final JobApplication application;
   final InterviewSchedule? upcomingInterview;
   final bool showStatusChip;
+  final bool enableHero;
   final VoidCallback? onTap;
 
   @override
@@ -61,23 +64,33 @@ class ApplicationCard extends StatelessWidget {
         ? s.workplaceLabel(workplace)
         : '${s.workplaceLabel(workplace)} • ${application.location.trim()}';
 
-    return SurfaceCard(
-      onTap: onTap,
-      padding: const EdgeInsets.all(16),
-      radius: 16,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Header: Monogram + Company & Role + Priority Pill
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              CompanyMonogram(
-                companyName: application.companyName,
-                size: 42,
-                radius: 12,
-              ),
+    final monogram = CompanyMonogram(
+      companyName: application.companyName,
+      size: 42,
+      radius: 12,
+    );
+
+    return PressableScale(
+      enabled: onTap != null,
+      child: SurfaceCard(
+        onTap: onTap,
+        padding: const EdgeInsets.all(16),
+        radius: 16,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Header: Monogram + Company & Role + Priority Pill
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (enableHero)
+                  Hero(
+                    tag: 'app-monogram-${application.id}',
+                    child: monogram,
+                  )
+                else
+                  monogram,
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -362,9 +375,10 @@ class ApplicationCard extends StatelessWidget {
                     ),
                   ],
                 ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

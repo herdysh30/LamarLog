@@ -5,6 +5,7 @@ import '../../../../core/database/app_database.dart';
 import '../../../../core/enums/application_enums.dart';
 import '../../../../core/l10n/app_strings.dart';
 import '../../../../core/layout/responsive.dart';
+import '../../../../core/motion/app_motion.dart';
 import '../../../../core/widgets/applyflow_widgets.dart';
 import '../../../applications/presentation/bloc/applications_bloc.dart';
 import '../../domain/analytics_calculator.dart';
@@ -87,7 +88,12 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                             : cs.surfaceContainer,
                         borderRadius: BorderRadius.circular(999),
                         child: InkWell(
-                          onTap: () => setState(() => _period = p),
+                          onTap: () {
+                            if (_period != p) {
+                              AppMotion.selectionHaptic();
+                              setState(() => _period = p);
+                            }
+                          },
                           borderRadius: BorderRadius.circular(999),
                           child: Padding(
                             padding: const EdgeInsets.symmetric(
@@ -280,8 +286,11 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                               borderRadius: BorderRadius.circular(999),
                               child: TweenAnimationBuilder<double>(
                                 tween: Tween(begin: 0, end: ratio),
-                                duration: const Duration(milliseconds: 450),
-                                curve: Curves.easeOutCubic,
+                                duration: AppMotion.duration(
+                                  context,
+                                  const Duration(milliseconds: 380),
+                                ),
+                                curve: AppMotion.enterCurve,
                                 builder: (_, val, _) => LinearProgressIndicator(
                                   value: val,
                                   minHeight: 8,
@@ -471,11 +480,17 @@ class _KpiCard extends StatelessWidget {
               Icon(icon, size: 18, color: color),
             ],
           ),
-          Text(
-            value,
-            style: theme.textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-              fontFeatures: const [FontFeature.tabularFigures()],
+          AnimatedSwitcher(
+            duration: AppMotion.duration(context, AppMotion.medium),
+            switchInCurve: AppMotion.enterCurve,
+            switchOutCurve: AppMotion.exitCurve,
+            child: Text(
+              value,
+              key: ValueKey(value),
+              style: theme.textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
             ),
           ),
           Text(

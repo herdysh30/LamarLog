@@ -9,6 +9,7 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../core/database/app_database.dart';
 import '../../../../core/l10n/app_strings.dart';
 import '../../../../core/layout/responsive.dart';
+import '../../../../core/motion/app_motion.dart';
 import '../../../../core/services/notification_service.dart';
 import '../../../../core/widgets/applyflow_widgets.dart';
 import '../../../applications/presentation/bloc/applications_bloc.dart';
@@ -97,12 +98,22 @@ class _NotificationsPageState extends State<NotificationsPage> {
                     _SegmentTab(
                       label: '${s.upcoming} (${upcoming.length})',
                       selected: _showUpcoming,
-                      onTap: () => setState(() => _showUpcoming = true),
+                      onTap: () {
+                        if (!_showUpcoming) {
+                          AppMotion.selectionHaptic();
+                          setState(() => _showUpcoming = true);
+                        }
+                      },
                     ),
                     _SegmentTab(
                       label: '${s.past} (${past.length})',
                       selected: !_showUpcoming,
-                      onTap: () => setState(() => _showUpcoming = false),
+                      onTap: () {
+                        if (_showUpcoming) {
+                          AppMotion.selectionHaptic();
+                          setState(() => _showUpcoming = false);
+                        }
+                      },
                     ),
                   ],
                 ),
@@ -165,96 +176,107 @@ class _NotificationsPageState extends State<NotificationsPage> {
               ],
               const SizedBox(height: 16),
 
-              // Empty State or Cards List
-              if (displayed.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 42),
-                  child: Column(
-                    children: [
-                      Container(
-                        width: 60,
-                        height: 60,
-                        decoration: BoxDecoration(
-                          color: cs.primaryFixed,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Icon(
-                          _showUpcoming
-                              ? Icons.notifications_none_rounded
-                              : Icons.history_rounded,
-                          size: 30,
-                          color: cs.onPrimaryFixed,
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      Text(
-                        _showUpcoming
-                            ? s.noUpcomingInterviews
-                            : s.noPastInterviews,
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.headlineSmall,
-                      ),
-                      if (_showUpcoming) ...[
-                        const SizedBox(height: 6),
-                        ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 300),
-                          child: Text(
-                            s.noUpcomingSub,
-                            textAlign: TextAlign.center,
-                            style: theme.textTheme.bodySmall,
-                          ),
-                        ),
-                        const SizedBox(height: 18),
-                        FilledButton.icon(
-                          style: FilledButton.styleFrom(
-                            backgroundColor: cs.primaryContainer,
-                            foregroundColor: Colors.white,
-                          ),
-                          onPressed: () => _startQuickSchedule(context, db),
-                          icon: const Icon(Icons.event_available_rounded,
-                              size: 18),
-                          label: Text(s.scheduleInterview),
-                        ),
-                      ],
-                    ],
-                  ),
-                )
-              else
-                ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: displayed.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    final item = displayed[index];
-                    return _ReminderCard(
-                      entry: item,
-                      isPast: !_showUpcoming,
-                      onOpenDetail: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => ApplicationDetailPage(
-                              application: item.application,
+              // Empty State or Cards List (smooth fade-through on Upcoming/Past switch)
+              AnimatedSwitcher(
+                duration: AppMotion.duration(context, AppMotion.medium),
+                switchInCurve: AppMotion.enterCurve,
+                switchOutCurve: AppMotion.exitCurve,
+                child: displayed.isEmpty
+                    ? Padding(
+                        key: ValueKey('empty_$_showUpcoming'),
+                        padding: const EdgeInsets.symmetric(vertical: 42),
+                        child: Column(
+                          children: [
+                            Container(
+                              width: 60,
+                              height: 60,
+                              decoration: BoxDecoration(
+                                color: cs.primaryFixed,
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Icon(
+                                _showUpcoming
+                                    ? Icons.notifications_none_rounded
+                                    : Icons.history_rounded,
+                                size: 30,
+                                color: cs.onPrimaryFixed,
+                              ),
                             ),
-                          ),
-                        );
-                      },
-                      onDelete: () async {
-                        try {
-                          await NotificationService.instance.cancelReminders(
-                            item.schedule.notificationId24h,
-                            item.schedule.notificationId1h,
+                            const SizedBox(height: 14),
+                            Text(
+                              _showUpcoming
+                                  ? s.noUpcomingInterviews
+                                  : s.noPastInterviews,
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.headlineSmall,
+                            ),
+                            if (_showUpcoming) ...[
+                              const SizedBox(height: 6),
+                              ConstrainedBox(
+                                constraints:
+                                    const BoxConstraints(maxWidth: 300),
+                                child: Text(
+                                  s.noUpcomingSub,
+                                  textAlign: TextAlign.center,
+                                  style: theme.textTheme.bodySmall,
+                                ),
+                              ),
+                              const SizedBox(height: 18),
+                              FilledButton.icon(
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: cs.primaryContainer,
+                                  foregroundColor: Colors.white,
+                                ),
+                                onPressed: () =>
+                                    _startQuickSchedule(context, db),
+                                icon: const Icon(Icons.event_available_rounded,
+                                    size: 18),
+                                label: Text(s.scheduleInterview),
+                              ),
+                            ],
+                          ],
+                        ),
+                      )
+                    : ListView.separated(
+                        key: ValueKey('list_$_showUpcoming'),
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: displayed.length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          final item = displayed[index];
+                          return _ReminderCard(
+                            entry: item,
+                            isPast: !_showUpcoming,
+                            onOpenDetail: () {
+                              Navigator.of(context).push(
+                                AppMotion.sharedAxisRoute<void>(
+                                  ApplicationDetailPage(
+                                    application: item.application,
+                                  ),
+                                ),
+                              );
+                            },
+                            onDelete: () async {
+                              try {
+                                await NotificationService.instance
+                                    .cancelReminders(
+                                  item.schedule.notificationId24h,
+                                  item.schedule.notificationId1h,
+                                );
+                                await db
+                                    .deleteInterviewSchedule(item.schedule.id);
+                              } catch (_) {
+                                if (context.mounted) {
+                                  showErrorSnackBar(
+                                      context, s.actionFailedGeneric);
+                                }
+                              }
+                            },
                           );
-                          await db.deleteInterviewSchedule(item.schedule.id);
-                        } catch (_) {
-                          if (context.mounted) {
-                            showErrorSnackBar(context, s.actionFailedGeneric);
-                          }
-                        }
-                      },
-                    );
-                  },
-                ),
+                        },
+                      ),
+              ),
             ],
           ),
           );

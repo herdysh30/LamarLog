@@ -5,6 +5,7 @@ import '../core/database/app_database.dart';
 import '../core/l10n/app_strings.dart';
 import '../core/layout/responsive.dart';
 import '../core/models/pipeline_stage_config.dart';
+import '../core/motion/app_motion.dart';
 import '../core/widgets/applyflow_widgets.dart';
 import '../features/analytics/presentation/pages/analytics_page.dart';
 import '../features/applications/presentation/bloc/applications_bloc.dart';
@@ -129,8 +130,12 @@ class _AppShellState extends State<AppShell> {
                       fontWeight: FontWeight.w500,
                       color: cs.secondary,
                     ),
-                    onDestinationSelected: (index) =>
-                        setState(() => _selectedIndex = index),
+                    onDestinationSelected: (index) {
+                      if (index != _selectedIndex) {
+                        AppMotion.selectionHaptic();
+                        setState(() => _selectedIndex = index);
+                      }
+                    },
                     destinations: [
                       NavigationRailDestination(
                         icon: const Icon(Icons.view_column_outlined),
@@ -161,7 +166,7 @@ class _AppShellState extends State<AppShell> {
                   color: cs.outlineVariant.withValues(alpha: isDark ? 0.5 : 0.35),
                 ),
                 Expanded(
-                  child: IndexedStack(
+                  child: FadeThroughIndexedStack(
                     index: _selectedIndex,
                     children: pages,
                   ),
@@ -172,7 +177,7 @@ class _AppShellState extends State<AppShell> {
         }
 
         return Scaffold(
-          body: IndexedStack(
+          body: FadeThroughIndexedStack(
             index: _selectedIndex,
             children: pages,
           ),
@@ -197,8 +202,12 @@ class _AppShellState extends State<AppShell> {
             ),
             child: NavigationBar(
               selectedIndex: _selectedIndex,
-              onDestinationSelected: (index) =>
-                  setState(() => _selectedIndex = index),
+              onDestinationSelected: (index) {
+                if (index != _selectedIndex) {
+                  AppMotion.selectionHaptic();
+                  setState(() => _selectedIndex = index);
+                }
+              },
               destinations: [
                 NavigationDestination(
                   icon: const Icon(Icons.view_column_outlined),

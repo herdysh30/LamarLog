@@ -7,6 +7,7 @@ import '../../../../core/enums/application_enums.dart';
 import '../../../../core/l10n/app_strings.dart';
 import '../../../../core/layout/responsive.dart';
 import '../../../../core/models/pipeline_stage_config.dart';
+import '../../../../core/motion/app_motion.dart';
 import '../../../../core/widgets/applyflow_widgets.dart';
 import '../../../settings/presentation/widgets/pipeline_stages_sheet.dart';
 import '../bloc/applications_bloc.dart';
@@ -109,40 +110,47 @@ class _PipelinePageState extends State<PipelinePage> {
                             SizedBox(
                               width: 48,
                               height: 48,
-                              child: Material(
-                                color: cs.surfaceContainerLow,
-                                borderRadius: BorderRadius.circular(12),
-                                child: InkWell(
-                                  onTap: () => _showFilterSheet(context, state),
+                              child: Semantics(
+                                button: true,
+                                label: s.pipelineFilter,
+                                child: Material(
+                                  color: cs.surfaceContainerLow,
                                   borderRadius: BorderRadius.circular(12),
-                                  child: Stack(
-                                    alignment: Alignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.tune_rounded,
-                                        color: state.hasActiveFilters
-                                            ? cs.primary
-                                            : cs.secondary,
-                                        size: 21,
-                                      ),
-                                      if (state.hasActiveFilters)
-                                        Positioned(
-                                          top: 10,
-                                          right: 10,
-                                          child: Container(
-                                            width: 8,
-                                            height: 8,
-                                            decoration: BoxDecoration(
-                                              color: cs.primary,
-                                              shape: BoxShape.circle,
-                                              border: Border.all(
-                                                color: cs.surface,
-                                                width: 1.5,
+                                  child: InkWell(
+                                    onTap: () {
+                                      AppMotion.selectionHaptic();
+                                      _showFilterSheet(context, state);
+                                    },
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Stack(
+                                      alignment: Alignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.tune_rounded,
+                                          color: state.hasActiveFilters
+                                              ? cs.primary
+                                              : cs.secondary,
+                                          size: 21,
+                                        ),
+                                        if (state.hasActiveFilters)
+                                          Positioned(
+                                            top: 10,
+                                            right: 10,
+                                            child: Container(
+                                              width: 8,
+                                              height: 8,
+                                              decoration: BoxDecoration(
+                                                color: cs.primary,
+                                                shape: BoxShape.circle,
+                                                border: Border.all(
+                                                  color: cs.surface,
+                                                  width: 1.5,
+                                                ),
                                               ),
                                             ),
                                           ),
-                                        ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
@@ -172,15 +180,23 @@ class _PipelinePageState extends State<PipelinePage> {
                                       selected: _isKanbanView,
                                       icon: Icons.view_kanban_outlined,
                                       label: s.kanban,
-                                      onTap: () =>
-                                          setState(() => _isKanbanView = true),
+                                      onTap: () {
+                                        if (!_isKanbanView) {
+                                          AppMotion.selectionHaptic();
+                                          setState(() => _isKanbanView = true);
+                                        }
+                                      },
                                     ),
                                     _ViewModeButton(
                                       selected: !_isKanbanView,
                                       icon: Icons.format_list_bulleted_rounded,
                                       label: s.list,
-                                      onTap: () =>
-                                          setState(() => _isKanbanView = false),
+                                      onTap: () {
+                                        if (_isKanbanView) {
+                                          AppMotion.selectionHaptic();
+                                          setState(() => _isKanbanView = false);
+                                        }
+                                      },
                                     ),
                                   ],
                                 ),
@@ -334,35 +350,49 @@ class _PipelinePageState extends State<PipelinePage> {
                                     .read<ApplicationsBloc>()
                                     .add(const LoadApplications()),
                               )
-                            : _isKanbanView
-                            ? _KanbanBoard(
-                                state: state,
-                                nextInterviewByApp: nextInterviewByApp,
-                                onAddToStage: (stage) => _openForm(
+                            : AnimatedSwitcher(
+                                duration: AppMotion.duration(
                                   context,
-                                  initialStatusId: stage.id,
+                                  AppMotion.medium,
                                 ),
-                                onRenameStage: widget.onRenameStage == null
-                                    ? null
-                                    : (stage) =>
-                                        _showRenameStageDialog(context, stage),
-                                onManageStages:
-                                    widget.onPipelineStagesChanged == null
-                                        ? null
-                                        : () => showPipelineStagesManagerSheet(
-                                              context,
-                                              onSave:
-                                                  widget.onPipelineStagesChanged!,
-                                            ),
-                                onOpenDetail: (app) =>
-                                    _openDetail(context, app),
-                              )
-                            : _ListViewBody(
-                                applications: state.activeApplications,
-                                nextInterviewByApp: nextInterviewByApp,
-                                onOpenDetail: (app) =>
-                                    _openDetail(context, app),
-                                onAddFirst: () => _openForm(context),
+                                switchInCurve: AppMotion.enterCurve,
+                                switchOutCurve: AppMotion.exitCurve,
+                                child: _isKanbanView
+                                    ? _KanbanBoard(
+                                        key: const ValueKey('kanban_view'),
+                                        state: state,
+                                        nextInterviewByApp: nextInterviewByApp,
+                                        onAddToStage: (stage) => _openForm(
+                                          context,
+                                          initialStatusId: stage.id,
+                                        ),
+                                        onRenameStage:
+                                            widget.onRenameStage == null
+                                                ? null
+                                                : (stage) =>
+                                                    _showRenameStageDialog(
+                                                        context, stage),
+                                        onManageStages:
+                                            widget.onPipelineStagesChanged ==
+                                                    null
+                                                ? null
+                                                : () =>
+                                                    showPipelineStagesManagerSheet(
+                                                      context,
+                                                      onSave: widget
+                                                          .onPipelineStagesChanged!,
+                                                    ),
+                                        onOpenDetail: (app) =>
+                                            _openDetail(context, app),
+                                      )
+                                    : _ListViewBody(
+                                        key: const ValueKey('list_view'),
+                                        applications: state.activeApplications,
+                                        nextInterviewByApp: nextInterviewByApp,
+                                        onOpenDetail: (app) =>
+                                            _openDetail(context, app),
+                                        onAddFirst: () => _openForm(context),
+                                      ),
                               ),
                   ),
 
@@ -445,8 +475,8 @@ class _PipelinePageState extends State<PipelinePage> {
 
   void _openForm(BuildContext context, {String? initialStatusId}) {
     Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => ApplicationFormPage(
+      AppMotion.slideUpRoute<void>(
+        ApplicationFormPage(
           initialStatusId: initialStatusId,
           defaultCurrency: widget.defaultCurrency,
         ),
@@ -456,8 +486,8 @@ class _PipelinePageState extends State<PipelinePage> {
 
   void _openDetail(BuildContext context, JobApplication app) {
     Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => ApplicationDetailPage(application: app),
+      AppMotion.sharedAxisRoute<void>(
+        ApplicationDetailPage(application: app),
       ),
     );
   }
@@ -1033,6 +1063,7 @@ class _ViewModeButton extends StatelessWidget {
 
 class _KanbanBoard extends StatelessWidget {
   const _KanbanBoard({
+    super.key,
     required this.state,
     required this.nextInterviewByApp,
     required this.onAddToStage,
@@ -1127,6 +1158,7 @@ class _KanbanBoard extends StatelessWidget {
 
             return DragTarget<JobApplication>(
               onAcceptWithDetails: (details) {
+                AppMotion.lightHaptic();
                 context.read<ApplicationsBloc>().add(
                       MoveApplicationStatus(
                         application: details.data,
@@ -1140,7 +1172,8 @@ class _KanbanBoard extends StatelessWidget {
                 final theme = Theme.of(context);
 
                 return AnimatedContainer(
-                  duration: const Duration(milliseconds: 160),
+                  duration: AppMotion.duration(context, AppMotion.fast),
+                  curve: AppMotion.standardCurve,
                   width: colWidth,
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
@@ -1172,7 +1205,7 @@ class _KanbanBoard extends StatelessWidget {
                             borderRadius: BorderRadius.circular(8),
                             child: Padding(
                               padding: const EdgeInsets.symmetric(
-                                  vertical: 4, horizontal: 2),
+                                  vertical: 6, horizontal: 2),
                               child: Row(
                                 children: [
                                   Container(
@@ -1217,14 +1250,17 @@ class _KanbanBoard extends StatelessWidget {
                           ),
                         ),
                         SizedBox(
-                          width: 34,
-                          height: 34,
+                          width: 44,
+                          height: 44,
                           child: IconButton(
                             padding: EdgeInsets.zero,
                             tooltip: s.addToStage(stageTitle),
                             icon: Icon(Icons.add_rounded,
                                 size: 20, color: cs.secondary),
-                            onPressed: () => onAddToStage(stage),
+                            onPressed: () {
+                              AppMotion.selectionHaptic();
+                              onAddToStage(stage);
+                            },
                           ),
                         ),
                       ],
@@ -1320,15 +1356,20 @@ class _KanbanBoard extends StatelessWidget {
                               final interview = nextInterviewByApp[app.id];
                               return LongPressDraggable<JobApplication>(
                                 data: app,
+                                onDragStarted: AppMotion.impactHaptic,
                                 feedback: SizedBox(
                                   width: colWidth - 20,
-                                  child: Material(
-                                    elevation: 10,
-                                    color: Colors.transparent,
-                                    borderRadius: BorderRadius.circular(16),
-                                    child: ApplicationCard(
-                                      application: app,
-                                      upcomingInterview: interview,
+                                  child: Transform.scale(
+                                    scale: 1.02,
+                                    child: Material(
+                                      elevation: 12,
+                                      color: Colors.transparent,
+                                      borderRadius: BorderRadius.circular(16),
+                                      child: ApplicationCard(
+                                        application: app,
+                                        upcomingInterview: interview,
+                                        enableHero: false,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -1337,6 +1378,7 @@ class _KanbanBoard extends StatelessWidget {
                                   child: ApplicationCard(
                                     application: app,
                                     upcomingInterview: interview,
+                                    enableHero: false,
                                   ),
                                 ),
                                 child: ApplicationCard(
@@ -1362,6 +1404,7 @@ class _KanbanBoard extends StatelessWidget {
 
 class _ListViewBody extends StatelessWidget {
   const _ListViewBody({
+    super.key,
     required this.applications,
     required this.nextInterviewByApp,
     required this.onOpenDetail,

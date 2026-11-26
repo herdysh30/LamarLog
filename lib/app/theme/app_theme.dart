@@ -46,6 +46,12 @@ abstract final class AppTheme {
       brightness: Brightness.light,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: p.surfaceLight,
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+        },
+      ),
       appBarTheme: AppBarTheme(
         backgroundColor: p.surfaceLight,
         surfaceTintColor: Colors.transparent,
@@ -203,6 +209,12 @@ abstract final class AppTheme {
       brightness: Brightness.dark,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: p.surfaceDark,
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+        },
+      ),
       appBarTheme: AppBarTheme(
         backgroundColor: p.surfaceDark,
         surfaceTintColor: Colors.transparent,

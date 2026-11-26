@@ -16,6 +16,7 @@ import '../../../../core/enums/application_enums.dart';
 import '../../../../core/l10n/app_strings.dart';
 import '../../../../core/layout/responsive.dart';
 import '../../../../core/models/pipeline_stage_config.dart';
+import '../../../../core/motion/app_motion.dart';
 import '../../../../core/services/notification_service.dart';
 import '../../../../core/utils/contact_launcher.dart';
 import '../../../../core/utils/stale_application_helper.dart';
@@ -117,11 +118,14 @@ class _ApplicationDetailPageState extends State<ApplicationDetailPage> {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        CompanyMonogram(
-                          companyName: app.companyName,
-                          size: 48,
-                          radius: 12,
-                          filled: true,
+                        Hero(
+                          tag: 'app-monogram-${app.id}',
+                          child: CompanyMonogram(
+                            companyName: app.companyName,
+                            size: 48,
+                            radius: 12,
+                            filled: true,
+                          ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -952,8 +956,8 @@ class _ApplicationDetailPageState extends State<ApplicationDetailPage> {
                             resume: resume,
                             onPreview: () {
                               Navigator.of(context).push(
-                                MaterialPageRoute<void>(
-                                  builder: (_) => PdfPreviewPage(
+                                AppMotion.sharedAxisRoute<void>(
+                                  PdfPreviewPage(
                                     filePath: resume.privateFilePath,
                                     fileName: resume.originalFileName,
                                   ),
@@ -1305,8 +1309,8 @@ class _ApplicationDetailPageState extends State<ApplicationDetailPage> {
 
   void _openEditForm(BuildContext context, JobApplication app) {
     Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => ApplicationFormPage(existingApplication: app),
+      AppMotion.slideUpRoute<void>(
+        ApplicationFormPage(existingApplication: app),
       ),
     );
   }
@@ -1564,6 +1568,7 @@ class _ApplicationDetailPageState extends State<ApplicationDetailPage> {
                       ? Icon(Icons.check_circle_rounded, color: cs.primary)
                       : null,
                   onTap: () {
+                    AppMotion.lightHaptic();
                     context.read<ApplicationsBloc>().add(
                           MoveApplicationStatus(
                             application: app,
