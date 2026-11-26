@@ -468,46 +468,118 @@ class _PipelinePageState extends State<PipelinePage> {
   ) {
     final s = AppLocaleScope.of(context);
     final ctrl = TextEditingController(text: stage.label);
+    var selectedColor = stage.colorKey;
 
     showDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(s.renameColumn),
-        content: TextField(
-          controller: ctrl,
-          autofocus: true,
-          textCapitalization: TextCapitalization.words,
-          decoration: InputDecoration(
-            hintText: s.columnNameHint,
-          ),
-        ),
-        actions: [
-          if (widget.onPipelineStagesChanged != null)
-            TextButton(
-              onPressed: () {
-                Navigator.of(ctx).pop();
-                showPipelineStagesManagerSheet(
-                  context,
-                  onSave: widget.onPipelineStagesChanged!,
-                );
-              },
-              child: Text(s.isId ? 'Kelola Semua' : 'Manage All'),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          final theme = Theme.of(ctx);
+          final cs = theme.colorScheme;
+          final brightness = theme.brightness;
+
+          return AlertDialog(
+            title: Text(s.isId ? 'Ubah Tahap' : 'Edit Stage'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    controller: ctrl,
+                    autofocus: true,
+                    textCapitalization: TextCapitalization.words,
+                    decoration: InputDecoration(
+                      hintText: s.columnNameHint,
+                      labelText: s.isId ? 'Nama Tahap' : 'Stage Name',
+                    ),
+                  ),
+                  if (widget.onPipelineStagesChanged != null) ...[
+                    const SizedBox(height: 16),
+                    Text(
+                      s.stageColorLabel,
+                      style: theme.textTheme.labelMedium,
+                    ),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: StageColorKey.values.map((key) {
+                        final dot = key.dotColor(brightness);
+                        final isSel = selectedColor == key;
+                        return InkWell(
+                          borderRadius: BorderRadius.circular(999),
+                          onTap: () =>
+                              setDialogState(() => selectedColor = key),
+                          child: Container(
+                            width: 34,
+                            height: 34,
+                            decoration: BoxDecoration(
+                              color: dot,
+                              shape: BoxShape.circle,
+                              border: isSel
+                                  ? Border.all(
+                                      color: cs.onSurface,
+                                      width: 2.5,
+                                    )
+                                  : null,
+                            ),
+                            child: isSel
+                                ? const Icon(
+                                    Icons.check_rounded,
+                                    size: 18,
+                                    color: Colors.white,
+                                  )
+                                : null,
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ],
+              ),
             ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(s.cancel),
-          ),
-          FilledButton(
-            onPressed: () {
-              final value = ctrl.text.trim();
-              if (value.isNotEmpty) {
-                widget.onRenameStage?.call(stage.id, value);
-              }
-              Navigator.of(ctx).pop();
-            },
-            child: Text(s.save),
-          ),
-        ],
+            actions: [
+              if (widget.onPipelineStagesChanged != null)
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(ctx).pop();
+                    showPipelineStagesManagerSheet(
+                      context,
+                      onSave: widget.onPipelineStagesChanged!,
+                    );
+                  },
+                  child: Text(s.isId ? 'Kelola Semua' : 'Manage All'),
+                ),
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: Text(s.cancel),
+              ),
+              FilledButton(
+                onPressed: () {
+                  final value = ctrl.text.trim();
+                  if (value.isNotEmpty) {
+                    if (widget.onPipelineStagesChanged != null) {
+                      final updated = s.pipelineStages
+                          .map((st) => st.id == stage.id
+                              ? st.copyWith(
+                                  label: value,
+                                  colorKey: selectedColor,
+                                )
+                              : st)
+                          .toList();
+                      widget.onPipelineStagesChanged!(updated);
+                    } else {
+                      widget.onRenameStage?.call(stage.id, value);
+                    }
+                  }
+                  Navigator.of(ctx).pop();
+                },
+                child: Text(s.save),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
