@@ -27,19 +27,20 @@ Setelah selesai, Wrangler akan menampilkan URL Worker, misalnya:
 https://lamarlog-report-worker.<subdomain>.workers.dev
 ```
 
-Endpoint laporan aktif berada di:
-```text
-https://lamarlog-report-worker.<subdomain>.workers.dev/report
-```
+Endpoint aktif:
+- Laporan bug/crash: `POST https://lamarlog-report-worker.<subdomain>.workers.dev/report`
+- Cek rilis terbaru: `GET https://lamarlog-report-worker.<subdomain>.workers.dev/latest-release` (di-cache 5 menit di edge Cloudflare)
 
 ### 3. Hubungkan ke Aplikasi Flutter & GitHub Release
 - **Saat build/run lokal:**
   ```bash
   flutter run --dart-define=REPORT_ENDPOINT=https://lamarlog-report-worker.<subdomain>.workers.dev/report
   ```
+  *(Endpoint `/latest-release` otomatis diturunkan dari `REPORT_ENDPOINT`, atau bisa override lewat `--dart-define=UPDATE_ENDPOINT=...`.)*
 - **Untuk build rilis otomatis di GitHub Actions (`.github/workflows/release.yml`):**
   1. Buka repo GitHub → **Settings → Secrets and variables → Actions → New repository secret**.
   2. Name: `REPORT_ENDPOINT`
   3. Value: `https://lamarlog-report-worker.<subdomain>.workers.dev/report`
+  4. *(Opsional)* Tambahkan secret `UPDATE_ENDPOINT` jika memakai domain/worker terpisah untuk cek pembaruan.
 
-Selesai! Setiap APK rilis berikutnya akan otomatis mengirim laporan bug/crash ke GitHub Issues secara anonim dan aman.
+Selesai! Setiap APK rilis berikutnya otomatis mendukung laporan bug/crash anonim dan cek pembaruan dari GitHub Releases lewat Worker.

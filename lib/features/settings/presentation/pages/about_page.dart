@@ -1,20 +1,246 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../core/l10n/app_strings.dart';
 import '../../../../core/layout/responsive.dart';
 import '../../../../core/motion/app_motion.dart';
+import '../../../../core/services/update_check_service.dart';
 import '../../../../core/utils/contact_launcher.dart';
 import '../../../../core/widgets/applyflow_widgets.dart';
 import '../../../../core/widgets/send_report_dialog.dart';
 
-class AboutPage extends StatelessWidget {
-  const AboutPage({super.key});
+class AboutPage extends StatefulWidget {
+  const AboutPage({super.key, this.checkUpdateOverride});
 
-  static const String appVersion = '1.3.1';
+  static const String appVersion = UpdateCheckService.currentVersion;
   static final Uri _repoUri =
       Uri.parse('https://github.com/herdysh30/LamarLog');
   static final Uri _releasesUri =
       Uri.parse('https://github.com/herdysh30/LamarLog/releases');
+
+  final Future<UpdateCheckResult> Function()? checkUpdateOverride;
+
+  @override
+  State<AboutPage> createState() => _AboutPageState();
+}
+
+class _AboutPageState extends State<AboutPage> {
+  bool _checkingUpdate = false;
+  UpdateCheckResult? _lastCheck;
+
+  Future<void> _handleCheckUpdate(AppStrings s) async {
+    if (_checkingUpdate) return;
+    AppMotion.selectionHaptic();
+    setState(() => _checkingUpdate = true);
+
+    final result = await (widget.checkUpdateOverride != null
+        ? widget.checkUpdateOverride!()
+        : UpdateCheckService.instance.checkForUpdate());
+
+    if (!mounted) return;
+    setState(() {
+      _checkingUpdate = false;
+      _lastCheck = result;
+    });
+
+    switch (result.status) {
+      case UpdateCheckStatus.updateAvailable:
+        if (result.release != null) {
+          await _showUpdateAvailableSheet(result.release!, s);
+        }
+      case UpdateCheckStatus.upToDate:
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(s.updateUpToDate(result.currentVersion))),
+        );
+      case UpdateCheckStatus.notConfigured:
+        _showUpdateErrorWithFallback(s.updateNotConfigured, s);
+      case UpdateCheckStatus.networkError:
+        _showUpdateErrorWithFallback(s.updateNetworkFailed, s);
+      case UpdateCheckStatus.serverError:
+        _showUpdateErrorWithFallback(s.updateServerFailed, s);
+    }
+  }
+
+  void _showUpdateErrorWithFallback(String message, AppStrings s) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        action: SnackBarAction(
+          label: 'GitHub',
+          onPressed: () => _openUri(context, AboutPage._releasesUri, s),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showUpdateAvailableSheet(
+    ReleaseInfo release,
+    AppStrings s,
+  ) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) {
+        final theme = Theme.of(ctx);
+        final cs = theme.colorScheme;
+        final publishedLocal = release.publishedAtUtc != null
+            ? DateFormat.yMMMd().format(release.publishedAtUtc!.toLocal())
+            : null;
+
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: cs.primaryFixed,
+                          borderRadius: BorderRadius.circular(11),
+                        ),
+                        child: Icon(
+                          Icons.system_update_rounded,
+                          color: cs.onPrimaryFixed,
+                          size: 22,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              s.updateAvailableTitle,
+                              style: theme.textTheme.headlineSmall,
+                            ),
+                            Text(
+                              publishedLocal != null
+                                  ? '${release.name} • $publishedLocal'
+                                  : release.name,
+                              style: theme.textTheme.bodySmall,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        tooltip:
+                            MaterialLocalizations.of(ctx).closeButtonTooltip,
+                        onPressed: () => Navigator.of(ctx).pop(),
+                        icon: const Icon(Icons.close_rounded),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: cs.surfaceContainerHigh,
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          'v${AboutPage.appVersion}',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                          ),
+                        ),
+                      ),
+                      Icon(Icons.arrow_forward_rounded,
+                          size: 16, color: cs.onSurfaceVariant),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: cs.primaryFixed,
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          'v${release.version}',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: cs.onPrimaryFixed,
+                            fontWeight: FontWeight.w700,
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (release.body.isNotEmpty) ...[
+                    const SizedBox(height: 14),
+                    Text(
+                      s.updateReleaseNotes,
+                      style: theme.textTheme.labelLarge,
+                    ),
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      constraints: const BoxConstraints(maxHeight: 180),
+                      decoration: BoxDecoration(
+                        color: cs.surfaceContainerLow,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: SingleChildScrollView(
+                        child: Text(
+                          release.body,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            height: 1.45,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    height: 48,
+                    child: FilledButton.icon(
+                      onPressed: () {
+                        Navigator.of(ctx).pop();
+                        _openUri(context, release.preferredDownloadUri, s);
+                      },
+                      icon: const Icon(Icons.download_rounded, size: 18),
+                      label: Text(
+                        release.apkUri != null || release.universalApkUri != null
+                            ? s.updateDownloadApk
+                            : s.updateViewGitHub,
+                      ),
+                    ),
+                  ),
+                  if (release.apkUri != null ||
+                      release.universalApkUri != null) ...[
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      height: 48,
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.of(ctx).pop();
+                          _openUri(context, release.htmlUri, s);
+                        },
+                        icon: const Icon(Icons.open_in_new_rounded, size: 17),
+                        label: Text(s.updateViewGitHub),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,6 +248,14 @@ class AboutPage extends StatelessWidget {
     final cs = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
     final s = AppLocaleScope.of(context);
+
+    final updateSubtitle = _checkingUpdate
+        ? s.checkingUpdate
+        : (_lastCheck?.hasUpdate == true
+            ? s.updateAvailableBadge(_lastCheck!.release!.version)
+            : (_lastCheck?.status == UpdateCheckStatus.upToDate
+                ? s.updateUpToDate(AboutPage.appVersion)
+                : s.checkUpdateSub));
 
     return Scaffold(
       appBar: AppBar(
@@ -91,7 +325,7 @@ class AboutPage extends StatelessWidget {
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: Text(
-                      'v$appVersion',
+                      'v${AboutPage.appVersion}',
                       style: theme.textTheme.labelSmall?.copyWith(
                         color: cs.onPrimaryFixed,
                         fontWeight: FontWeight.w700,
@@ -178,6 +412,39 @@ class AboutPage extends StatelessWidget {
               child: Column(
                 children: [
                   _AboutLinkTile(
+                    icon: Icons.system_update_rounded,
+                    title: s.checkUpdateTitle,
+                    subtitle: updateSubtitle,
+                    trailingOverride: _checkingUpdate
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : (_lastCheck?.hasUpdate == true
+                            ? Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: cs.primaryFixed,
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: Text(
+                                  'v${_lastCheck!.release!.version}',
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: cs.onPrimaryFixed,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              )
+                            : null),
+                    trailingIcon: Icons.refresh_rounded,
+                    onTap: _checkingUpdate
+                        ? null
+                        : () => _handleCheckUpdate(s),
+                  ),
+                  const Divider(indent: 14, endIndent: 14),
+                  _AboutLinkTile(
                     icon: Icons.bug_report_outlined,
                     title: s.aboutReportBug,
                     subtitle: s.aboutReportBugSub,
@@ -193,7 +460,7 @@ class AboutPage extends StatelessWidget {
                     title: s.aboutGithubRepo,
                     subtitle: 'github.com/herdysh30/LamarLog',
                     trailingIcon: Icons.open_in_new_rounded,
-                    onTap: () => _openUri(context, _repoUri, s),
+                    onTap: () => _openUri(context, AboutPage._repoUri, s),
                   ),
                   const Divider(indent: 14, endIndent: 14),
                   _AboutLinkTile(
@@ -201,7 +468,7 @@ class AboutPage extends StatelessWidget {
                     title: s.aboutReleases,
                     subtitle: 'github.com/herdysh30/LamarLog/releases',
                     trailingIcon: Icons.open_in_new_rounded,
-                    onTap: () => _openUri(context, _releasesUri, s),
+                    onTap: () => _openUri(context, AboutPage._releasesUri, s),
                   ),
                   const Divider(indent: 14, endIndent: 14),
                   _AboutLinkTile(
@@ -214,7 +481,7 @@ class AboutPage extends StatelessWidget {
                       showLicensePage(
                         context: context,
                         applicationName: 'LamarLog',
-                        applicationVersion: 'v$appVersion',
+                        applicationVersion: 'v${AboutPage.appVersion}',
                         applicationIcon: Padding(
                           padding: const EdgeInsets.only(top: 12, bottom: 8),
                           child: ClipRRect(
@@ -324,13 +591,15 @@ class _AboutLinkTile extends StatelessWidget {
     required this.subtitle,
     required this.trailingIcon,
     required this.onTap,
+    this.trailingOverride,
   });
 
   final IconData icon;
   final String title;
   final String subtitle;
   final IconData trailingIcon;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
+  final Widget? trailingOverride;
 
   @override
   Widget build(BuildContext context) {
@@ -354,7 +623,8 @@ class _AboutLinkTile extends StatelessWidget {
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
-      trailing: Icon(trailingIcon, size: 18, color: cs.onSurfaceVariant),
+      trailing: trailingOverride ??
+          Icon(trailingIcon, size: 18, color: cs.onSurfaceVariant),
       onTap: onTap,
     );
   }

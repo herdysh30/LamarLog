@@ -894,4 +894,34 @@ class AppStrings {
   String pendingRemindersCount(int n) => isId
       ? '$n jadwal mendatang belum memiliki alarm aktif.'
       : '$n upcoming schedule(s) have inactive alarms.';
+
+  // Check for Updates (Worker -> GitHub Releases)
+  String get checkUpdateTitle =>
+      isId ? 'Periksa Pembaruan' : 'Check for Updates';
+  String get checkUpdateSub => isId
+      ? 'Cek rilis terbaru di GitHub lewat Worker'
+      : 'Check latest GitHub release via Worker';
+  String get checkingUpdate =>
+      isId ? 'Memeriksa pembaruan...' : 'Checking for updates...';
+  String updateUpToDate(String ver) => isId
+      ? 'LamarLog sudah versi terbaru (v$ver).'
+      : 'LamarLog is up to date (v$ver).';
+  String updateAvailableBadge(String ver) =>
+      isId ? 'Tersedia v$ver' : 'v$ver available';
+  String get updateAvailableTitle =>
+      isId ? 'Pembaruan Tersedia' : 'Update Available';
+  String get updateDownloadApk => isId ? 'Unduh APK' : 'Download APK';
+  String get updateViewGitHub =>
+      isId ? 'Lihat di GitHub' : 'View on GitHub';
+  String get updateReleaseNotes =>
+      isId ? 'Catatan Rilis' : 'Release Notes';
+  String get updateNotConfigured => isId
+      ? 'Endpoint Worker belum dikonfigurasi. Cek manual di GitHub Releases.'
+      : 'Worker endpoint is not configured yet. Check GitHub Releases manually.';
+  String get updateNetworkFailed => isId
+      ? 'Gagal memeriksa pembaruan. Periksa koneksi internet Anda.'
+      : 'Could not check for updates. Please check your internet connection.';
+  String get updateServerFailed => isId
+      ? 'Server gagal mengambil info rilis GitHub. Coba lagi nanti.'
+      : 'Failed to fetch GitHub release info. Please try again later.';
 }

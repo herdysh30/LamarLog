@@ -40,10 +40,10 @@ jobs:
         run: flutter test
 
       - name: Build Universal Release APK
-        run: flutter build apk --release --dart-define=REPORT_ENDPOINT=${{ secrets.REPORT_ENDPOINT }}
+        run: flutter build apk --release --dart-define=REPORT_ENDPOINT=${{ secrets.REPORT_ENDPOINT }} --dart-define=UPDATE_ENDPOINT=${{ secrets.UPDATE_ENDPOINT }}
 
       - name: Build Split-per-ABI Release APKs
-        run: flutter build apk --release --split-per-abi --dart-define=REPORT_ENDPOINT=${{ secrets.REPORT_ENDPOINT }}
+        run: flutter build apk --release --split-per-abi --dart-define=REPORT_ENDPOINT=${{ secrets.REPORT_ENDPOINT }} --dart-define=UPDATE_ENDPOINT=${{ secrets.UPDATE_ENDPOINT }}
 
       - name: Prepare release artifacts
         run: |

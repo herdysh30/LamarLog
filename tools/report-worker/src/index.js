@@ -11,18 +11,108 @@
 const MAX_BODY_BYTES = 16 * 1024; // 16 KB max payload
 const RATE_LIMIT_MAX = 5; // max 5 reports per IP
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // per 15 minutes
+const RELEASE_CACHE_TTL_SEC = 300; // 5 minutes edge cache for GitHub Releases
 
 // Lightweight per-isolate rate limiter (effective against burst spam)
 const ipHits = new Map();
 
-function jsonResponse(data, status = 200) {
+function jsonResponse(data, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(data), {
     status,
     headers: {
       'Content-Type': 'application/json; charset=utf-8',
       'Cache-Control': 'no-store',
+      ...extraHeaders,
     },
   });
+}
+
+function pickApkAsset(assets, pattern) {
+  if (!Array.isArray(assets)) return null;
+  const match = assets.find(
+    (a) =>
+      typeof a?.name === 'string' &&
+      typeof a?.browser_download_url === 'string' &&
+      pattern.test(a.name)
+  );
+  return match ? match.browser_download_url : null;
+}
+
+async function handleLatestRelease(request, env, ctx) {
+  if (!env.GITHUB_OWNER || !env.GITHUB_REPO) {
+    return jsonResponse(
+      { ok: false, error: 'Server missing GitHub configuration' },
+      500
+    );
+  }
+
+  const cache = caches.default;
+  const cacheKey = new Request(
+    `${new URL(request.url).origin}/latest-release`,
+    { method: 'GET' }
+  );
+  const cached = await cache.match(cacheKey);
+  if (cached) return cached;
+
+  const ghUrl = `https://api.github.com/repos/${env.GITHUB_OWNER}/${env.GITHUB_REPO}/releases/latest`;
+  const baseHeaders = {
+    Accept: 'application/vnd.github+json',
+    'User-Agent': 'LamarLog-Worker/1.1',
+    'X-GitHub-Api-Version': '2022-11-28',
+  };
+
+  let ghRes = await fetch(ghUrl, {
+    method: 'GET',
+    headers: env.GITHUB_TOKEN
+      ? { ...baseHeaders, Authorization: `Bearer ${env.GITHUB_TOKEN}` }
+      : baseHeaders,
+  });
+
+  // Fallback to unauthenticated public request if token only has Issues scope
+  if (env.GITHUB_TOKEN && (ghRes.status === 401 || ghRes.status === 403)) {
+    ghRes = await fetch(ghUrl, { method: 'GET', headers: baseHeaders });
+  }
+
+  if (ghRes.status === 404) {
+    return jsonResponse({ ok: false, error: 'No published release found' }, 404);
+  }
+
+  if (!ghRes.ok) {
+    return jsonResponse(
+      { ok: false, error: `GitHub API rejected request (${ghRes.status})` },
+      502
+    );
+  }
+
+  const release = await ghRes.json();
+  const tagName = clip(release.tag_name, 64);
+  const version = tagName.replace(/^v/i, '');
+  const assets = Array.isArray(release.assets) ? release.assets : [];
+  const apkUrl =
+    pickApkAsset(assets, /arm64-v8a.*\.apk$/i) ||
+    pickApkAsset(assets, /\.apk$/i);
+  const universalApkUrl = pickApkAsset(assets, /universal.*\.apk$/i);
+
+  const response = jsonResponse(
+    {
+      ok: true,
+      tagName,
+      version,
+      name: clip(release.name, 120) || tagName,
+      body: clip(release.body, 2000),
+      htmlUrl: clip(release.html_url, 512),
+      publishedAt: clip(release.published_at, 48),
+      apkUrl,
+      universalApkUrl,
+    },
+    200,
+    { 'Cache-Control': `public, max-age=${RELEASE_CACHE_TTL_SEC}` }
+  );
+
+  if (ctx && typeof ctx.waitUntil === 'function') {
+    ctx.waitUntil(cache.put(cacheKey, response.clone()));
+  }
+  return response;
 }
 
 function isRateLimited(ip) {
@@ -46,11 +136,15 @@ function clip(value, maxLen) {
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
     if (request.method === 'GET' && url.pathname === '/health') {
       return jsonResponse({ ok: true, service: 'lamarlog-report-worker' });
+    }
+
+    if (request.method === 'GET' && url.pathname === '/latest-release') {
+      return handleLatestRelease(request, env, ctx);
     }
 
     if (request.method !== 'POST' || url.pathname !== '/report') {

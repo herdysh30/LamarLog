@@ -4,6 +4,9 @@ All notable changes to **LamarLog** (formerly ApplyFlow) are documented in this 
 
 ## [1.3.1] - 2026-11-26
 
+### Added
+- **In-App Update Checker (via Cloudflare Worker):** Added **Check for Updates** in About LamarLog (`UpdateCheckService` + `GET /latest-release` edge-cached route on `lamarlog-report-worker`) to check GitHub Releases, compare SemVer tags, preview release notes, and open direct APK downloads with GitHub fallback.
+
 ### Fixed
 - **Analytics Wishlist Revert Accuracy:** Moving an application from Wishlist to Applied and back to Wishlist no longer counts reverted transitions as Applied, and resets `appliedAt` cleanly.
 - **Landscape Kanban Overflow & Compact Sidebar Layout:** Moved the LamarLog brand mark to the top of the side `NavigationRail` in landscape/tablet layouts, removed the duplicate top AppBar, compacted the Pipeline toolbar into a single responsive row, and made Kanban columns overflow-proof across narrow, landscape, and large-font viewports.
