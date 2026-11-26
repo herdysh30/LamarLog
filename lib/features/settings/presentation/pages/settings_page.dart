@@ -14,10 +14,12 @@ import '../../../../core/database/app_database.dart';
 import '../../../../core/l10n/app_strings.dart';
 import '../../../../core/layout/responsive.dart';
 import '../../../../core/models/pipeline_stage_config.dart';
+import '../../../../core/motion/app_motion.dart';
 import '../../../../core/utils/csv_exporter.dart';
 import '../../../../core/widgets/applyflow_widgets.dart';
 import '../../../applications/presentation/bloc/applications_bloc.dart';
 import '../widgets/pipeline_stages_sheet.dart';
+import 'about_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({
@@ -654,7 +656,94 @@ class _SettingsPageState extends State<SettingsPage> {
               ],
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 22),
+
+          // SECTION 4: About
+          _SettingsSectionTitle(
+            icon: Icons.info_outline_rounded,
+            color: cs.primary,
+            title: s.aboutApp,
+          ),
+          const SizedBox(height: 10),
+          PressableScale(
+            child: SurfaceCard(
+              padding: const EdgeInsets.all(14),
+              onTap: () {
+                AppMotion.selectionHaptic();
+                Navigator.of(context).push(
+                  AppMotion.sharedAxisRoute<void>(const AboutPage()),
+                );
+              },
+              child: Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(11),
+                    child: Image.asset(
+                      'assets/icon/app_icon.png',
+                      width: 42,
+                      height: 42,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => Container(
+                        width: 42,
+                        height: 42,
+                        color: cs.primaryContainer,
+                        alignment: Alignment.center,
+                        child: const Icon(Icons.view_kanban_rounded,
+                            color: Colors.white, size: 22),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                s.aboutApp,
+                                style: theme.textTheme.titleSmall,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 7, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: cs.surfaceContainer,
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: Text(
+                                'v${AboutPage.appVersion}',
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  fontSize: 10.5,
+                                  color: cs.secondary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          s.aboutAppSub,
+                          style: theme.textTheme.bodySmall,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(Icons.chevron_right_rounded,
+                      size: 20, color: cs.onSurfaceVariant),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 22),
 
           // App Version Footer
           Column(
@@ -665,7 +754,8 @@ class _SettingsPageState extends State<SettingsPage> {
                   Icon(Icons.terminal_rounded,
                       size: 15, color: cs.onSurfaceVariant),
                   const SizedBox(width: 6),
-                  Text('ApplyFlow v1.0.0', style: theme.textTheme.labelSmall),
+                  Text('ApplyFlow v${AboutPage.appVersion}',
+                      style: theme.textTheme.labelSmall),
                 ],
               ),
               const SizedBox(height: 2),

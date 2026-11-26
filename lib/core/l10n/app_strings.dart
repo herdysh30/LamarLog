@@ -595,6 +595,45 @@ class AppStrings {
       ? 'Gagal menyimpan jadwal interview. Coba lagi.'
       : 'Failed to save interview schedule. Please try again.';
 
+  // About page
+  String get aboutApp => isId ? 'Tentang ApplyFlow' : 'About ApplyFlow';
+  String get aboutAppSub => isId
+      ? 'Versi aplikasi, privasi data, tautan GitHub, dan lisensi'
+      : 'App version, data privacy, GitHub repository & licenses';
+  String get aboutTagline => isId
+      ? 'Pelacak lamaran kerja offline-first untuk mengelola pipeline karier secara rapi dan privat.'
+      : 'Offline-first job application tracker designed to organize your career pipeline privately.';
+  String get aboutHighlightsTitle =>
+      isId ? 'Prinsip & Kemampuan Utama' : 'Core Principles & Highlights';
+  String get aboutStorageTitle =>
+      isId ? '100% Lokal & Privat' : '100% Local & Private';
+  String get aboutStorageDesc => isId
+      ? 'Seluruh lamaran, jadwal interview, catatan, dan CV PDF tersimpan di penyimpanan HP ini tanpa server pihak ketiga.'
+      : 'All applications, interview schedules, notes, and PDF resumes stay on this device with no third-party servers.';
+  String get aboutKanbanTitle =>
+      isId ? 'Pipeline & Analitik Akurat' : 'Custom Pipeline & Analytics';
+  String get aboutKanbanDesc => isId
+      ? 'Tahapan Kanban dapat ditambah/diubah sesuka hati, dengan funnel dan kecepatan respon dihitung dari riwayat transisi.'
+      : 'Fully customizable Kanban stages with conversion funnel and velocity computed from transition history.';
+  String get aboutRegionsTitle =>
+      isId ? 'Wilayah Indonesia Offline' : 'Offline Indonesia Regions';
+  String get aboutRegionsDesc => isId
+      ? 'Dilengkapi dataset lokal 38 provinsi, 514 kab/kota, dan 7.285 kecamatan yang bisa dicari instan tanpa internet.'
+      : 'Includes a bundled offline dataset of 38 provinces, 514 cities/regencies, and 7,285 districts.';
+  String get aboutResourcesTitle =>
+      isId ? 'Tautan & Lisensi' : 'Links & Licenses';
+  String get aboutGithubRepo =>
+      isId ? 'Repositori GitHub' : 'GitHub Repository';
+  String get aboutReleases =>
+      isId ? 'Rilis & Catatan Perubahan' : 'Releases & Changelog';
+  String get aboutOpenSourceLicenses =>
+      isId ? 'Lisensi Open-Source' : 'Open-Source Licenses';
+  String get aboutOpenSourceSub => isId
+      ? 'Lihat daftar pustaka pihak ketiga yang digunakan'
+      : 'View third-party packages and licenses used in ApplyFlow';
+  String get aboutBuiltWith =>
+      isId ? 'Dibangun dengan Flutter & Drift' : 'Built with Flutter & Drift';
+
   // Enum & custom stage labels
   String defaultStatusLabel(ApplicationStatus status) {
     if (!isId) return status.label;
