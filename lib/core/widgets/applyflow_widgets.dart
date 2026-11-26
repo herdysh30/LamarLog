@@ -65,7 +65,7 @@ class ApplyFlowAppBar extends StatelessWidget implements PreferredSizeWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'ApplyFlow',
+                  'LamarLog',
                   style: theme.textTheme.headlineSmall,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,

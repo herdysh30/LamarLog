@@ -76,7 +76,7 @@ class AboutPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'ApplyFlow',
+                    'LamarLog',
                     style: theme.textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.w700,
                       letterSpacing: -0.3,
@@ -213,7 +213,7 @@ class AboutPage extends StatelessWidget {
                       AppMotion.selectionHaptic();
                       showLicensePage(
                         context: context,
-                        applicationName: 'ApplyFlow',
+                        applicationName: 'LamarLog',
                         applicationVersion: 'v$appVersion',
                         applicationIcon: Padding(
                           padding: const EdgeInsets.only(top: 12, bottom: 8),

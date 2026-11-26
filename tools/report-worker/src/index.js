@@ -1,7 +1,7 @@
 /**
- * ApplyFlow Anonymous Bug/Crash Report Proxy (Cloudflare Worker)
+ * LamarLog Anonymous Bug/Crash Report Proxy (Cloudflare Worker)
  *
- * Accepts sanitized crash/bug reports from the ApplyFlow mobile app and
+ * Accepts sanitized crash/bug reports from the LamarLog mobile app and
  * creates GitHub Issues on `GITHUB_OWNER/GITHUB_REPO` using a server-side
  * Fine-Grained Personal Access Token stored in `env.GITHUB_TOKEN`.
  *
@@ -50,7 +50,7 @@ export default {
     const url = new URL(request.url);
 
     if (request.method === 'GET' && url.pathname === '/health') {
-      return jsonResponse({ ok: true, service: 'applyflow-report-worker' });
+      return jsonResponse({ ok: true, service: 'lamarlog-report-worker' });
     }
 
     if (request.method !== 'POST' || url.pathname !== '/report') {
@@ -65,7 +65,10 @@ export default {
     }
 
     const clientHeader = request.headers.get('X-App-Client') || '';
-    if (!clientHeader.startsWith('ApplyFlow/')) {
+    if (
+      !clientHeader.startsWith('LamarLog/') &&
+      !clientHeader.startsWith('ApplyFlow/')
+    ) {
       return jsonResponse({ ok: false, error: 'Invalid client header' }, 400);
     }
 
@@ -131,7 +134,7 @@ export default {
         : []),
       '',
       '---',
-      '_Submitted anonymously from ApplyFlow via Cloudflare Worker proxy._',
+      '_Submitted anonymously from LamarLog via Cloudflare Worker proxy._',
     ].join('\n');
 
     const ghUrl = `https://api.github.com/repos/${env.GITHUB_OWNER}/${env.GITHUB_REPO}/issues`;
@@ -141,7 +144,7 @@ export default {
         Authorization: `Bearer ${env.GITHUB_TOKEN}`,
         Accept: 'application/vnd.github+json',
         'Content-Type': 'application/json',
-        'User-Agent': 'ApplyFlow-Report-Worker/1.0',
+        'User-Agent': 'LamarLog-Report-Worker/1.0',
         'X-GitHub-Api-Version': '2022-11-28',
       },
       body: JSON.stringify({

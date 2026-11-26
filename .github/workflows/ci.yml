@@ -1,4 +1,4 @@
-name: ApplyFlow CI
+name: LamarLog CI
 
 on:
   push:

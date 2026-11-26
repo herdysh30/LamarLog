@@ -193,7 +193,7 @@ class _ApplyFlowAppState extends State<ApplyFlowApp> {
             customPipelineStages: _customPipelineStages,
           ),
           child: MaterialApp(
-            title: 'ApplyFlow',
+            title: 'LamarLog',
             debugShowCheckedModeBanner: false,
             theme: AppTheme.light(_colorPalette),
             darkTheme: AppTheme.dark(_colorPalette),

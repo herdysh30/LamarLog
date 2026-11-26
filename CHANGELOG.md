@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to **ApplyFlow** are documented in this file.
+All notable changes to **LamarLog** (formerly ApplyFlow) are documented in this file.
 
 ## [1.1.0] - 2026-11-26
 

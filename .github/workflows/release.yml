@@ -48,25 +48,25 @@ jobs:
       - name: Prepare release artifacts
         run: |
           mkdir -p release_artifacts
-          cp build/app/outputs/flutter-apk/app-release.apk "release_artifacts/ApplyFlow-${GITHUB_REF_NAME}-universal.apk"
-          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk "release_artifacts/ApplyFlow-${GITHUB_REF_NAME}-arm64-v8a.apk"
+          cp build/app/outputs/flutter-apk/app-release.apk "release_artifacts/LamarLog-${GITHUB_REF_NAME}-universal.apk"
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk "release_artifacts/LamarLog-${GITHUB_REF_NAME}-arm64-v8a.apk"
           ls -lh release_artifacts/
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: "ApplyFlow ${{ github.ref_name }}"
+          name: "LamarLog ${{ github.ref_name }}"
           generate_release_notes: true
           body: |
-            ## ApplyFlow ${{ github.ref_name }}
+            ## LamarLog ${{ github.ref_name }}
 
             ### Downloads
-            - **`ApplyFlow-${{ github.ref_name }}-arm64-v8a.apk`** — Recommended for most modern Android phones (smaller size).
-            - **`ApplyFlow-${{ github.ref_name }}-universal.apk`** — Compatible with all Android architectures.
+            - **`LamarLog-${{ github.ref_name }}-arm64-v8a.apk`** — Recommended for most modern Android phones (smaller size).
+            - **`LamarLog-${{ github.ref_name }}-universal.apk`** — Compatible with all Android architectures.
 
             See [CHANGELOG.md](https://github.com/herdysh30/ApplyFlow/blob/main/CHANGELOG.md) for curated release highlights.
 
             ---
           files: |
-            release_artifacts/ApplyFlow-${{ github.ref_name }}-arm64-v8a.apk
-            release_artifacts/ApplyFlow-${{ github.ref_name }}-universal.apk
+            release_artifacts/LamarLog-${{ github.ref_name }}-arm64-v8a.apk
+            release_artifacts/LamarLog-${{ github.ref_name }}-universal.apk

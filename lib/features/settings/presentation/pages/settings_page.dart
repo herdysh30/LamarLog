@@ -754,7 +754,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   Icon(Icons.terminal_rounded,
                       size: 15, color: cs.onSurfaceVariant),
                   const SizedBox(width: 6),
-                  Text('ApplyFlow v${AboutPage.appVersion}',
+                  Text('LamarLog v${AboutPage.appVersion}',
                       style: theme.textTheme.labelSmall),
                 ],
               ),
@@ -894,7 +894,7 @@ class _SettingsPageState extends State<SettingsPage> {
       final jsonString = const JsonEncoder.withIndent('  ').convert(payload);
       final bytes = Uint8List.fromList(utf8.encode(jsonString));
       final dateTag = DateTime.now().toIso8601String().substring(0, 10);
-      final fileName = 'applyflow_backup_$dateTag.json';
+      final fileName = 'lamarlog_backup_$dateTag.json';
 
       final savedUri = await FilePicker.saveFile(
         dialogTitle: s.exportBackup,
@@ -935,7 +935,7 @@ class _SettingsPageState extends State<SettingsPage> {
       );
       final bytes = Uint8List.fromList(utf8.encode(csvString));
       final dateTag = DateTime.now().toIso8601String().substring(0, 10);
-      final fileName = 'applyflow_applications_$dateTag.csv';
+      final fileName = 'lamarlog_applications_$dateTag.csv';
 
       final savedUri = await FilePicker.saveFile(
         dialogTitle: s.exportCsv,

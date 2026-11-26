@@ -287,7 +287,7 @@ ${payload.stackTrace.trim().isNotEmpty ? '\n### Stack Trace\n```text\n${payload.
     try {
       final req = await client.postUrl(uri);
       req.headers.set(HttpHeaders.contentTypeHeader, 'application/json; charset=utf-8');
-      req.headers.set('X-App-Client', 'ApplyFlow/$appVersion');
+      req.headers.set('X-App-Client', 'LamarLog/$appVersion');
       final bodyBytes = utf8.encode(jsonEncode(payload.toJson()));
       req.add(bodyBytes);
 

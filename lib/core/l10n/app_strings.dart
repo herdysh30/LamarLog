@@ -596,7 +596,7 @@ class AppStrings {
       : 'Failed to save interview schedule. Please try again.';
 
   // About page
-  String get aboutApp => isId ? 'Tentang ApplyFlow' : 'About ApplyFlow';
+  String get aboutApp => isId ? 'Tentang LamarLog' : 'About LamarLog';
   String get aboutAppSub => isId
       ? 'Versi aplikasi, privasi data, tautan GitHub, dan lisensi'
       : 'App version, data privacy, GitHub repository & licenses';
@@ -630,7 +630,7 @@ class AppStrings {
       isId ? 'Lisensi Open-Source' : 'Open-Source Licenses';
   String get aboutOpenSourceSub => isId
       ? 'Lihat daftar pustaka pihak ketiga yang digunakan'
-      : 'View third-party packages and licenses used in ApplyFlow';
+      : 'View third-party packages and licenses used in LamarLog';
   String get aboutBuiltWith =>
       isId ? 'Dibangun dengan Flutter & Drift' : 'Built with Flutter & Drift';
 

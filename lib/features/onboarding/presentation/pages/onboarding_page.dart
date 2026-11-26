@@ -97,7 +97,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      Text('ApplyFlow', style: theme.textTheme.headlineSmall),
+                      Text('LamarLog', style: theme.textTheme.headlineSmall),
                     ],
                   ),
                   Row(

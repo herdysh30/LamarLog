@@ -1,6 +1,6 @@
-# ApplyFlow
+# LamarLog
 
-**ApplyFlow** is an offline-first mobile job application tracker built with Flutter. Manage your career pipeline on a Kanban board or list view, log interview schedules with local reminders, attach tailored PDF resumes privately on-device, and track conversion analytics from full status history.
+**LamarLog** is an offline-first mobile job application tracker built with Flutter. Manage your career pipeline on a Kanban board or list view, log interview schedules with local reminders, attach tailored PDF resumes privately on-device, and track conversion analytics from full status history.
 
 ## Features
 

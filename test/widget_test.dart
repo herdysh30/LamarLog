@@ -19,7 +19,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
-    expect(find.text('ApplyFlow'), findsOneWidget);
+    expect(find.text('LamarLog'), findsOneWidget);
     expect(find.text('Pipeline'), findsWidgets);
     expect(find.text('Track Job'), findsOneWidget);
 
