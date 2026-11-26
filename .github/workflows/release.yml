@@ -1,0 +1,79 @@
+name: Release APK
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build & Publish GitHub Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Static analysis
+        run: flutter analyze
+
+      - name: Run unit & widget tests
+        run: flutter test
+
+      - name: Build Universal Release APK
+        run: flutter build apk --release
+
+      - name: Build Split-per-ABI Release APKs
+        run: flutter build apk --release --split-per-abi
+
+      - name: Prepare release artifacts
+        run: |
+          mkdir -p release_artifacts
+          cp build/app/outputs/flutter-apk/app-release.apk "release_artifacts/ApplyFlow-${GITHUB_REF_NAME}-universal.apk"
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk "release_artifacts/ApplyFlow-${GITHUB_REF_NAME}-arm64-v8a.apk"
+          ls -lh release_artifacts/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "ApplyFlow ${{ github.ref_name }}"
+          generate_release_notes: true
+          body: |
+            ## ApplyFlow ${{ github.ref_name }}
+
+            Offline-first job application tracker built with Flutter.
+
+            ### Highlights
+            - **Kanban & List Pipeline:** Drag-and-drop Kanban board with customizable column names, responsive list/grid view, search (including job platform), filters, sorting, and Terminal Archive.
+            - **Application Platform Tracking:** Record where you applied (LinkedIn, Glints, JobStreet, Kalibrr, Dealls, Company Site, Referral, Email, or custom).
+            - **Direct Recruiter & Link Actions:** One-tap open job links, send email (`mailto:`), call, or chat via WhatsApp.
+            - **Stale Follow-up Alerts:** Automatic follow-up badge & quick actions for applications awaiting reply for ≥14 days.
+            - **Private PDF Resumes & Interview Reminders:** On-device PDF preview (max 10 MB) and 24h/1h local notifications with smart fallbacks.
+            - **Funnel Analytics:** Conversion rates and stage velocity computed from immutable `StatusTransition` history.
+            - **Data Vault:** Offline local storage, full JSON backup/restore, and CSV spreadsheet export.
+            - **Personalization:** Light & Dark mode, 5 color palettes, English & Bahasa Indonesia, IDR/USD currency, and adaptive phone/tablet layouts.
+
+            ### Downloads
+            - **`ApplyFlow-${{ github.ref_name }}-arm64-v8a.apk`** — Recommended for most modern Android phones (smaller size).
+            - **`ApplyFlow-${{ github.ref_name }}-universal.apk`** — Works on all Android architectures.
+          files: |
+            release_artifacts/ApplyFlow-${{ github.ref_name }}-arm64-v8a.apk
+            release_artifacts/ApplyFlow-${{ github.ref_name }}-universal.apk
