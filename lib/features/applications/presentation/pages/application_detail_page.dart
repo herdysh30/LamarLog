@@ -21,6 +21,7 @@ import '../../../../core/services/notification_service.dart';
 import '../../../../core/utils/contact_launcher.dart';
 import '../../../../core/utils/stale_application_helper.dart';
 import '../../../../core/widgets/applyflow_widgets.dart';
+import '../../../../core/widgets/notification_permission_dialog.dart';
 import '../bloc/applications_bloc.dart';
 import 'application_form_page.dart';
 import 'pdf_preview_page.dart';
@@ -1451,8 +1452,13 @@ class _ApplicationDetailPageState extends State<ApplicationDetailPage> {
                           : 'Saved, reminders inactive (notification permission denied).',
                       ReminderStatus.scheduleFailed => s.reminderScheduleFailed,
                     };
-                    ScaffoldMessenger.of(context)
-                        .showSnackBar(SnackBar(content: Text(msg)));
+                    if (reminderResult.status ==
+                        ReminderStatus.permissionDenied) {
+                      await showNotificationPermissionDialog(context);
+                    } else {
+                      ScaffoldMessenger.of(context)
+                          .showSnackBar(SnackBar(content: Text(msg)));
+                    }
                   }
                 } catch (_) {
                   if (context.mounted) {

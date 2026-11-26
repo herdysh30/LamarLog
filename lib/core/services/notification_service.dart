@@ -1,9 +1,11 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
+import 'package:url_launcher/url_launcher.dart';
 
 enum ReminderStatus {
   scheduledBoth,
@@ -28,6 +30,9 @@ class ReminderScheduleResult {
 class NotificationService {
   NotificationService._();
   static final NotificationService instance = NotificationService._();
+
+  static const MethodChannel _systemChannel =
+      MethodChannel('com.lamarlog.lamarlog/system');
 
   final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
@@ -57,6 +62,34 @@ class NotificationService {
     }
   }
 
+  /// Checks whether OS notifications are currently enabled without prompting.
+  Future<bool> areNotificationsEnabled() async {
+    try {
+      await init();
+      if (!_initialized) return false;
+      if (Platform.isAndroid) {
+        final androidImpl = _plugin.resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+        final enabled = await androidImpl?.areNotificationsEnabled();
+        return enabled ?? false;
+      }
+      if (Platform.isIOS) {
+        final iosImpl = _plugin.resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin>();
+        final perms = await iosImpl?.checkPermissions();
+        return perms?.isEnabled ?? false;
+      }
+      return true;
+    } catch (e) {
+      debugPrint('[LamarLog NotificationCheckError] $e');
+      return false;
+    }
+  }
+
+  /// Requests OS notification permission. Note that on Android 13+, once the
+  /// user denies permission, Android suppresses subsequent system dialogs and
+  /// returns `false` immediately — callers should then offer
+  /// [openNotificationSettings].
   Future<bool> requestPermission() async {
     try {
       await init();
@@ -64,6 +97,8 @@ class NotificationService {
       if (Platform.isAndroid) {
         final androidImpl = _plugin.resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>();
+        final alreadyEnabled = await androidImpl?.areNotificationsEnabled();
+        if (alreadyEnabled == true) return true;
         final granted = await androidImpl?.requestNotificationsPermission();
         return granted ?? false;
       }
@@ -84,14 +119,39 @@ class NotificationService {
     }
   }
 
+  /// Opens the OS App Notification Settings screen directly so users can
+  /// re-enable notifications after Android/iOS suppresses the runtime dialog.
+  Future<bool> openNotificationSettings() async {
+    try {
+      if (Platform.isAndroid) {
+        final opened = await _systemChannel
+            .invokeMethod<bool>('openNotificationSettings');
+        return opened ?? false;
+      }
+      if (Platform.isIOS) {
+        final uri = Uri.parse('app-settings:');
+        if (await canLaunchUrl(uri)) {
+          return launchUrl(uri);
+        }
+      }
+      return false;
+    } catch (e) {
+      debugPrint('[LamarLog OpenNotifSettingsError] $e');
+      return false;
+    }
+  }
+
   Future<ReminderScheduleResult> scheduleInterviewReminders({
     required String scheduleId,
     required String companyName,
     required String roundName,
     required DateTime scheduledAtUtc,
+    bool skipPermissionPrompt = false,
   }) async {
     try {
-      final hasPermission = await requestPermission();
+      final hasPermission = skipPermissionPrompt
+          ? await areNotificationsEnabled()
+          : await requestPermission();
       if (!hasPermission) {
         return const ReminderScheduleResult(
           status: ReminderStatus.permissionDenied,

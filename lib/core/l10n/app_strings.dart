@@ -748,4 +748,49 @@ class AppStrings {
       JobType.freelance => 'Freelance',
     };
   }
+
+  // Multi-page Settings hub & Notification Permission Recovery
+  String get settingsAppearanceTitle =>
+      isId ? 'Tampilan & Bahasa' : 'Appearance & Language';
+  String get settingsNotificationsTitle =>
+      isId ? 'Notifikasi & Pengingat' : 'Notifications & Reminders';
+  String get settingsDataBackupTitle =>
+      isId ? 'Data & Cadangan' : 'Data & Backup';
+  String get settingsPipelineStagesTitle =>
+      isId ? 'Tahap Pipeline' : 'Pipeline Stages';
+  String settingsActiveStagesSummary(int count) =>
+      isId ? '$count tahap aktif' : '$count active stages';
+  String get notifStatusEnabled => isId ? 'Aktif' : 'Enabled';
+  String get notifStatusDisabled => isId ? 'Nonaktif' : 'Disabled';
+  String get notifPermissionCardTitle =>
+      isId ? 'Izin Notifikasi Perangkat' : 'Device Notification Permission';
+  String get notifPermissionEnabledDesc => isId
+      ? 'Pengingat otomatis H-24 jam & H-1 jam sebelum interview aktif.'
+      : 'Automatic 24h & 1h interview reminders are active.';
+  String get notifPermissionDisabledDesc => isId
+      ? 'Aktifkan izin notifikasi agar pengingat interview bisa muncul.'
+      : 'Enable notifications so interview reminders can alert you.';
+  String get notifPermissionBlockedTitle =>
+      isId ? 'Aktifkan Notifikasi di Pengaturan' : 'Enable Notifications in Settings';
+  String get notifPermissionBlockedBody => isId
+      ? 'Izin notifikasi ditolak atau tidak lagi ditampilkan oleh sistem. Buka Pengaturan Notifikasi untuk mengaktifkannya kembali.'
+      : 'Notification permission was denied or suppressed by the system. Open Notification Settings to turn it back on.';
+  String get openNotificationSettings =>
+      isId ? 'Buka Pengaturan' : 'Open Settings';
+  String get notNow => isId ? 'Nanti' : 'Not Now';
+  String get requestPermissionNow =>
+      isId ? 'Izinkan Notifikasi' : 'Allow Notifications';
+  String get deviceNotificationSettings =>
+      isId ? 'Pengaturan Notifikasi Sistem' : 'System Notification Settings';
+  String get reminderRulesTitle =>
+      isId ? 'Jadwal Pengingat Otomatis' : 'Automatic Reminder Schedule';
+  String get reminderRule24h =>
+      isId ? '24 jam sebelum jadwal interview' : '24 hours before interview';
+  String get reminderRule1h =>
+      isId ? '1 jam sebelum jadwal interview' : '1 hour before interview';
+  String get syncPendingReminders =>
+      isId ? 'Sinkronkan Pengingat Tertunda' : 'Sync Inactive Reminders';
+  String pendingRemindersCount(int n) => isId
+      ? '$n jadwal mendatang belum memiliki alarm aktif.'
+      : '$n upcoming schedule(s) have inactive alarms.';
 }

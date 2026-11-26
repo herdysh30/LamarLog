@@ -12,6 +12,7 @@ import '../../../../core/layout/responsive.dart';
 import '../../../../core/motion/app_motion.dart';
 import '../../../../core/services/notification_service.dart';
 import '../../../../core/widgets/applyflow_widgets.dart';
+import '../../../../core/widgets/notification_permission_dialog.dart';
 import '../../../applications/presentation/bloc/applications_bloc.dart';
 import '../../../applications/presentation/pages/application_detail_page.dart';
 
@@ -22,9 +23,50 @@ class NotificationsPage extends StatefulWidget {
   State<NotificationsPage> createState() => _NotificationsPageState();
 }
 
-class _NotificationsPageState extends State<NotificationsPage> {
+class _NotificationsPageState extends State<NotificationsPage>
+    with WidgetsBindingObserver {
   bool _showUpcoming = true;
+  bool _awaitingSettingsReturn = false;
   final _uuid = const Uuid();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _awaitingSettingsReturn) {
+      _awaitingSettingsReturn = false;
+      _autoRescheduleIfGranted();
+    }
+  }
+
+  Future<void> _autoRescheduleIfGranted() async {
+    if (!mounted) return;
+    final enabled = await NotificationService.instance.areNotificationsEnabled();
+    if (!enabled || !mounted) return;
+
+    final db = context.read<AppDatabase>();
+    final nowUtc = DateTime.now().toUtc();
+    final all = await db.watchAllInterviewsWithApplications().first;
+    final inactive = all.where((e) {
+      final diff = e.schedule.scheduledAt.difference(nowUtc);
+      return diff >= const Duration(hours: 1) &&
+          e.schedule.notificationId1h == null &&
+          e.schedule.notificationId24h == null;
+    }).toList();
+
+    if (inactive.isEmpty || !mounted) return;
+    await _rescheduleInactive(context, db, inactive, skipPrompt: true);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -82,8 +124,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
               padding: Responsive.pagePadding(context, bottom: 96),
             children: [
               Text(s.notificationsTitle, style: theme.textTheme.headlineLarge),
-              const SizedBox(height: 4),
-              Text(s.notificationsSubtitle, style: theme.textTheme.bodySmall),
               const SizedBox(height: 14),
 
               // Upcoming / Past Segmented Toggle
@@ -296,12 +336,28 @@ class _NotificationsPageState extends State<NotificationsPage> {
   Future<void> _rescheduleInactive(
     BuildContext context,
     AppDatabase db,
-    List<InterviewWithApplication> items,
-  ) async {
+    List<InterviewWithApplication> items, {
+    bool skipPrompt = false,
+  }) async {
     final s = AppLocaleScope.of(context);
     int reactivated = 0;
 
     try {
+      final granted = skipPrompt
+          ? await NotificationService.instance.areNotificationsEnabled()
+          : await NotificationService.instance.requestPermission();
+
+      if (!granted) {
+        if (context.mounted) {
+          final openedSettings =
+              await showNotificationPermissionDialog(context);
+          if (openedSettings) {
+            _awaitingSettingsReturn = true;
+          }
+        }
+        return;
+      }
+
       for (final entry in items) {
         final res =
             await NotificationService.instance.scheduleInterviewReminders(
@@ -309,6 +365,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
           companyName: entry.application.companyName,
           roundName: entry.schedule.roundName,
           scheduledAtUtc: entry.schedule.scheduledAt,
+          skipPermissionPrompt: true,
         );
         if (res.notificationId1h != null || res.notificationId24h != null) {
           await db.updateInterviewReminderIds(
@@ -328,9 +385,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                   ? (s.isId
                       ? '$reactivated pengingat berhasil diaktifkan kembali.'
                       : '$reactivated reminder(s) re-enabled.')
-                  : (s.isId
-                      ? 'Izin notifikasi belum diberikan di pengaturan perangkat.'
-                      : 'Notification permission is still denied in device settings.'),
+                  : s.reminderScheduleFailed,
             ),
           ),
         );
@@ -552,8 +607,24 @@ class _NotificationsPageState extends State<NotificationsPage> {
                           : 'Saved, reminders inactive (notification permission denied).',
                       ReminderStatus.scheduleFailed => s.reminderScheduleFailed,
                     };
-                    ScaffoldMessenger.of(context)
-                        .showSnackBar(SnackBar(content: Text(msg)));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(msg),
+                        action: res.status == ReminderStatus.permissionDenied
+                            ? SnackBarAction(
+                                label: s.openNotificationSettings,
+                                onPressed: () async {
+                                  final opened =
+                                      await showNotificationPermissionDialog(
+                                          context);
+                                  if (opened) {
+                                    _awaitingSettingsReturn = true;
+                                  }
+                                },
+                              )
+                            : null,
+                      ),
+                    );
                   }
                 } catch (_) {
                   if (context.mounted) {

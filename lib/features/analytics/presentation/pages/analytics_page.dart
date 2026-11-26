@@ -62,11 +62,6 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                 s.analyticsInsights,
                 style: theme.textTheme.headlineLarge,
               ),
-              const SizedBox(height: 4),
-              Text(
-                s.analyticsSubtitle,
-                style: theme.textTheme.bodySmall,
-              ),
               const SizedBox(height: 14),
 
               // Period Filter Chips
