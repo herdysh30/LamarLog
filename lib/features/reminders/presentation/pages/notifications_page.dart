@@ -72,10 +72,13 @@ class _NotificationsPageState extends State<NotificationsPage>
     final cs = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
     final s = AppLocaleScope.of(context);
+    final useSidebar = Responsive.isMediumOrWider(context);
 
     return Scaffold(
-      appBar: ApplyFlowAppBar(subtitle: s.navNotifications),
-      body: StreamBuilder<List<InterviewWithApplication>>(
+      appBar: useSidebar ? null : ApplyFlowAppBar(subtitle: s.navNotifications),
+      body: SafeArea(
+        left: !useSidebar,
+        child: StreamBuilder<List<InterviewWithApplication>>(
         stream: db.watchAllInterviewsWithApplications(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
@@ -321,6 +324,7 @@ class _NotificationsPageState extends State<NotificationsPage>
             ),
           );
         },
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _startQuickSchedule(context, db),

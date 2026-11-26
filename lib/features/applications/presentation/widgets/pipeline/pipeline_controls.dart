@@ -12,12 +12,14 @@ class PipelineViewModeButton extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onTap,
+    this.compact = false,
   });
 
   final bool selected;
   final IconData icon;
   final String label;
   final VoidCallback onTap;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +30,10 @@ class PipelineViewModeButton extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 160),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        padding: EdgeInsets.symmetric(
+          horizontal: compact ? 9 : 12,
+          vertical: compact ? 5 : 7,
+        ),
         decoration: BoxDecoration(
           color: selected ? cs.surfaceContainerLowest : Colors.transparent,
           borderRadius: BorderRadius.circular(9),
@@ -72,12 +77,14 @@ class PipelineStageFilterBar extends StatelessWidget {
     required this.state,
     required this.onSelectAll,
     required this.onToggleStage,
+    this.compact = false,
   });
 
   final List<PipelineStageConfig> stages;
   final ApplicationsState state;
   final VoidCallback onSelectAll;
   final ValueChanged<String> onToggleStage;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -90,7 +97,7 @@ class PipelineStageFilterBar extends StatelessWidget {
       container: true,
       label: s.filterByStage,
       child: SizedBox(
-        height: 48,
+        height: compact ? 38 : 48,
         child: ListView.separated(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -103,6 +110,7 @@ class PipelineStageFilterBar extends StatelessWidget {
                 count: allCount,
                 selected: !effectiveFilterActive,
                 stage: null,
+                compact: compact,
                 onTap: onSelectAll,
               );
             }
@@ -112,6 +120,7 @@ class PipelineStageFilterBar extends StatelessWidget {
               count: state.byStatusId(stage.id).length,
               selected: state.stageFilter.contains(stage.id),
               stage: stage,
+              compact: compact,
               onTap: () => onToggleStage(stage.id),
             );
           },
@@ -127,11 +136,13 @@ class PipelineStaleBanner extends StatelessWidget {
     required this.staleCount,
     required this.staleOnlyFilter,
     required this.onTap,
+    this.compact = false,
   });
 
   final int staleCount;
   final bool staleOnlyFilter;
   final VoidCallback onTap;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -141,37 +152,42 @@ class PipelineStaleBanner extends StatelessWidget {
     final s = AppLocaleScope.of(context);
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 2, 16, 10),
+      padding: EdgeInsets.fromLTRB(16, 2, 16, compact ? 4 : 10),
       child: Material(
         color: staleOnlyFilter
             ? cs.primaryContainer
             : (isDark ? const Color(0xFF3E2C0A) : const Color(0xFFFFF4D6)),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
         child: InkWell(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            padding: EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: compact ? 6 : 10,
+            ),
             child: Row(
               children: [
                 Icon(
                   staleOnlyFilter
                       ? Icons.filter_alt_rounded
                       : Icons.notifications_active_outlined,
-                  size: 18,
+                  size: compact ? 16 : 18,
                   color: staleOnlyFilter
                       ? Colors.white
                       : (isDark
                           ? const Color(0xFFFCD34D)
                           : const Color(0xFF92400E)),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         s.staleBannerTitle(staleCount),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.labelMedium?.copyWith(
                           color: staleOnlyFilter
                               ? Colors.white
@@ -181,19 +197,20 @@ class PipelineStaleBanner extends StatelessWidget {
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      Text(
-                        s.staleBannerSub,
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: staleOnlyFilter
-                              ? Colors.white.withValues(alpha: 0.85)
-                              : (isDark
-                                  ? const Color(0xFFFCD34D)
-                                      .withValues(alpha: 0.85)
-                                  : const Color(0xFF92400E)
-                                      .withValues(alpha: 0.85)),
-                          fontWeight: FontWeight.w400,
+                      if (!compact)
+                        Text(
+                          s.staleBannerSub,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: staleOnlyFilter
+                                ? Colors.white.withValues(alpha: 0.85)
+                                : (isDark
+                                    ? const Color(0xFFFCD34D)
+                                        .withValues(alpha: 0.85)
+                                    : const Color(0xFF92400E)
+                                        .withValues(alpha: 0.85)),
+                            fontWeight: FontWeight.w400,
+                          ),
                         ),
-                      ),
                     ],
                   ),
                 ),
@@ -225,6 +242,7 @@ class _StageChip extends StatelessWidget {
     required this.selected,
     required this.stage,
     required this.onTap,
+    this.compact = false,
   });
 
   final String label;
@@ -232,6 +250,7 @@ class _StageChip extends StatelessWidget {
   final bool selected;
   final PipelineStageConfig? stage;
   final VoidCallback onTap;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -264,11 +283,11 @@ class _StageChip extends StatelessWidget {
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
+          padding: EdgeInsets.symmetric(vertical: compact ? 2 : 4),
           child: AnimatedContainer(
             duration: AppMotion.duration(context, AppMotion.fast),
             curve: AppMotion.standardCurve,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            padding: EdgeInsets.symmetric(horizontal: compact ? 10 : 12),
             decoration: BoxDecoration(
               color: bg,
               borderRadius: BorderRadius.circular(999),
@@ -278,7 +297,7 @@ class _StageChip extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (selected)
-                  Icon(Icons.check_rounded, size: 16, color: fg)
+                  Icon(Icons.check_rounded, size: 15, color: fg)
                 else if (stage != null)
                   Container(
                     width: 8,
@@ -289,7 +308,7 @@ class _StageChip extends StatelessWidget {
                     ),
                   )
                 else
-                  Icon(Icons.layers_outlined, size: 16, color: fg),
+                  Icon(Icons.layers_outlined, size: 15, color: fg),
                 const SizedBox(width: 6),
                 Text(
                   label,

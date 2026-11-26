@@ -102,10 +102,13 @@ class _SettingsPageState extends State<SettingsPage>
     final notifDotColor = notifOk
         ? (isDark ? const Color(0xFF34D399) : const Color(0xFF059669))
         : (isDark ? AppColors.warningIconDark : AppColors.warningIconLight);
+    final useSidebar = Responsive.isMediumOrWider(context);
 
     return Scaffold(
-      appBar: ApplyFlowAppBar(subtitle: s.navSettings),
-      body: ResponsiveCenter(
+      appBar: useSidebar ? null : ApplyFlowAppBar(subtitle: s.navSettings),
+      body: SafeArea(
+        left: !useSidebar,
+        child: ResponsiveCenter(
         maxWidth: 680,
         child: ListView(
           padding: Responsive.pagePadding(context, bottom: 32),
@@ -314,6 +317,7 @@ class _SettingsPageState extends State<SettingsPage>
               ),
             ),
           ],
+        ),
         ),
       ),
     );

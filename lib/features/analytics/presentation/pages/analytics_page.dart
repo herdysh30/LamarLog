@@ -27,10 +27,13 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final s = AppLocaleScope.of(context);
+    final useSidebar = Responsive.isMediumOrWider(context);
 
     return Scaffold(
-      appBar: ApplyFlowAppBar(subtitle: s.navAnalytics),
-      body: StreamBuilder<List<StatusTransition>>(
+      appBar: useSidebar ? null : ApplyFlowAppBar(subtitle: s.navAnalytics),
+      body: SafeArea(
+        left: !useSidebar,
+        child: StreamBuilder<List<StatusTransition>>(
         stream: db.watchAllTransitions(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
@@ -117,6 +120,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
             ),
           );
         },
+        ),
       ),
     );
   }

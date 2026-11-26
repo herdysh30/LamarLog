@@ -6,8 +6,53 @@ import '../enums/application_enums.dart';
 import '../l10n/app_strings.dart';
 import 'send_report_dialog.dart';
 
-/// Shared ApplyFlow brand top bar used across primary tabs.
-/// Clean by default (no redundant offline badge unless explicitly provided, e.g. in Settings).
+/// Gradient brand mark for LamarLog, shared between AppBar and landscape sidebar.
+class LamarLogLogoMark extends StatelessWidget {
+  const LamarLogLogoMark({
+    super.key,
+    this.size = 36,
+    this.radius = 10,
+    this.iconSize = 20,
+  });
+
+  final double size;
+  final double radius;
+  final double iconSize;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            cs.primaryContainer,
+            cs.primary,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(radius),
+        boxShadow: [
+          BoxShadow(
+            color: cs.primaryContainer.withValues(alpha: 0.28),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Icon(
+        Icons.layers_rounded,
+        color: Colors.white,
+        size: iconSize,
+      ),
+    );
+  }
+}
+
+/// Shared ApplyFlow brand top bar used across primary tabs on compact layouts.
 class ApplyFlowAppBar extends StatelessWidget implements PreferredSizeWidget {
   const ApplyFlowAppBar({
     super.key,
@@ -24,40 +69,13 @@ class ApplyFlowAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final cs = theme.colorScheme;
 
     return AppBar(
       toolbarHeight: 64,
       titleSpacing: 16,
       title: Row(
         children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  cs.primaryContainer,
-                  cs.primary,
-                ],
-              ),
-              borderRadius: BorderRadius.circular(10),
-              boxShadow: [
-                BoxShadow(
-                  color: cs.primaryContainer.withValues(alpha: 0.28),
-                  blurRadius: 8,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: const Icon(
-              Icons.layers_rounded,
-              color: Colors.white,
-              size: 20,
-            ),
-          ),
+          const LamarLogLogoMark(),
           const SizedBox(width: 10),
           Expanded(
             child: Column(

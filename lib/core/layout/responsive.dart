@@ -14,21 +14,33 @@ abstract final class Responsive {
   static bool isExpanded(BuildContext context) =>
       MediaQuery.sizeOf(context).width >= expandedBreakpoint;
 
+  /// True on landscape phones and short split-screen windows where vertical
+  /// space is tight and chrome must stay compact.
+  static bool isCompactHeight(BuildContext context) =>
+      MediaQuery.sizeOf(context).height < 500;
+
   static EdgeInsets pagePadding(BuildContext context, {double bottom = 28}) {
-    final w = MediaQuery.sizeOf(context).width;
-    final horizontal = w >= mediumBreakpoint ? 24.0 : 16.0;
-    return EdgeInsets.fromLTRB(horizontal, 8, horizontal, bottom);
+    final size = MediaQuery.sizeOf(context);
+    final horizontal = size.width >= mediumBreakpoint ? 20.0 : 16.0;
+    final top = size.height < 500 ? 6.0 : 10.0;
+    return EdgeInsets.fromLTRB(horizontal, top, horizontal, bottom);
   }
 
   /// Computes a comfortable Kanban column width for 360dp phones up to tablets.
-  static double kanbanColumnWidth(double viewportWidth) {
+  static double kanbanColumnWidth(
+    double viewportWidth, {
+    bool compactHeight = false,
+  }) {
     if (viewportWidth < 380) {
       return (viewportWidth - 48).clamp(256.0, 296.0);
     }
     if (viewportWidth < mediumBreakpoint) {
       return (viewportWidth * 0.78).clamp(284.0, 316.0);
     }
-    return 320.0;
+    if (compactHeight) {
+      return 276.0;
+    }
+    return 312.0;
   }
 
   /// Number of KPI cards per row based on available width.

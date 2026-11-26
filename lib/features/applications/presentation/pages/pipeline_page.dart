@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/database/app_database.dart';
 import '../../../../core/l10n/app_strings.dart';
+import '../../../../core/layout/responsive.dart';
 import '../../../../core/models/pipeline_stage_config.dart';
 import '../../../../core/motion/app_motion.dart';
 import '../../../../core/widgets/applyflow_widgets.dart';
@@ -48,10 +49,15 @@ class _PipelinePageState extends State<PipelinePage> {
     final cs = theme.colorScheme;
     final db = context.read<AppDatabase>();
     final s = AppLocaleScope.of(context);
+    final useSidebar = Responsive.isMediumOrWider(context);
+    final isCompactHeight = Responsive.isCompactHeight(context);
+    final singleRowToolbar = useSidebar || isCompactHeight;
 
     return Scaffold(
-      appBar: ApplyFlowAppBar(subtitle: s.navPipeline),
-      body: StreamBuilder<List<InterviewSchedule>>(
+      appBar: useSidebar ? null : ApplyFlowAppBar(subtitle: s.navPipeline),
+      body: SafeArea(
+        left: !useSidebar,
+        child: StreamBuilder<List<InterviewSchedule>>(
         stream: db.watchUpcomingInterviews(),
         builder: (context, interviewSnap) {
           final nextInterviewByApp = <String, InterviewSchedule>{};
@@ -70,196 +76,221 @@ class _PipelinePageState extends State<PipelinePage> {
                   ? allStages.length
                   : filteredStageCount;
 
-              return Column(
-                children: [
-                  // Search + Filter + View Switcher Header
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 2),
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                controller: _searchController,
-                                onChanged: (val) {
-                                  context
-                                      .read<ApplicationsBloc>()
-                                      .add(SearchQueryChanged(val));
-                                  setState(() {});
-                                },
-                                decoration: InputDecoration(
-                                  hintText: s.searchHint,
-                                  prefixIcon: Icon(
-                                    Icons.search_rounded,
-                                    color: cs.secondary,
-                                    size: 20,
-                                  ),
-                                  suffixIcon: _searchController.text.isNotEmpty
-                                      ? IconButton(
-                                          tooltip: 'Clear',
-                                          icon: const Icon(Icons.close_rounded,
-                                              size: 18),
-                                          onPressed: () {
-                                            _searchController.clear();
-                                            context
-                                                .read<ApplicationsBloc>()
-                                                .add(
-                                                  const SearchQueryChanged(''),
-                                                );
-                                            setState(() {});
-                                          },
-                                        )
-                                      : null,
-                                  contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 14, vertical: 12),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            SizedBox(
-                              width: 48,
-                              height: 48,
-                              child: Semantics(
-                                button: true,
-                                label: s.pipelineFilter,
-                                child: Material(
-                                  color: cs.surfaceContainerLow,
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: InkWell(
-                                    onTap: () {
-                                      AppMotion.selectionHaptic();
-                                      showPipelineFilterSheet(context, state);
-                                    },
-                                    borderRadius: BorderRadius.circular(12),
-                                    child: Stack(
-                                      alignment: Alignment.center,
-                                      children: [
-                                        Icon(
-                                          Icons.tune_rounded,
-                                          color: state.hasActiveFilters
-                                              ? cs.primary
-                                              : cs.secondary,
-                                          size: 21,
-                                        ),
-                                        if (state.hasActiveFilters)
-                                          Positioned(
-                                            top: 10,
-                                            right: 10,
-                                            child: Container(
-                                              width: 8,
-                                              height: 8,
-                                              decoration: BoxDecoration(
-                                                color: cs.primary,
-                                                shape: BoxShape.circle,
-                                                border: Border.all(
-                                                  color: cs.surface,
-                                                  width: 1.5,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        SizedBox(
-                          width: double.infinity,
-                          child: Wrap(
-                            alignment: WrapAlignment.spaceBetween,
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(3),
+              final searchField = TextField(
+                controller: _searchController,
+                onChanged: (val) {
+                  context
+                      .read<ApplicationsBloc>()
+                      .add(SearchQueryChanged(val));
+                  setState(() {});
+                },
+                decoration: InputDecoration(
+                  isDense: singleRowToolbar,
+                  hintText: s.searchHint,
+                  prefixIcon: Icon(
+                    Icons.search_rounded,
+                    color: cs.secondary,
+                    size: 19,
+                  ),
+                  suffixIcon: _searchController.text.isNotEmpty
+                      ? IconButton(
+                          tooltip: 'Clear',
+                          icon: const Icon(Icons.close_rounded, size: 18),
+                          onPressed: () {
+                            _searchController.clear();
+                            context
+                                .read<ApplicationsBloc>()
+                                .add(const SearchQueryChanged(''));
+                            setState(() {});
+                          },
+                        )
+                      : null,
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: singleRowToolbar ? 9 : 12,
+                  ),
+                ),
+              );
+
+              final filterButton = SizedBox(
+                width: singleRowToolbar ? 42 : 48,
+                height: singleRowToolbar ? 42 : 48,
+                child: Semantics(
+                  button: true,
+                  label: s.pipelineFilter,
+                  child: Material(
+                    color: cs.surfaceContainerLow,
+                    borderRadius: BorderRadius.circular(12),
+                    child: InkWell(
+                      onTap: () {
+                        AppMotion.selectionHaptic();
+                        showPipelineFilterSheet(context, state);
+                      },
+                      borderRadius: BorderRadius.circular(12),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Icon(
+                            Icons.tune_rounded,
+                            color: state.hasActiveFilters
+                                ? cs.primary
+                                : cs.secondary,
+                            size: 20,
+                          ),
+                          if (state.hasActiveFilters)
+                            Positioned(
+                              top: 8,
+                              right: 8,
+                              child: Container(
+                                width: 8,
+                                height: 8,
                                 decoration: BoxDecoration(
-                                  color: cs.surfaceContainerLow,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    PipelineViewModeButton(
-                                      selected: _isKanbanView,
-                                      icon: Icons.view_kanban_outlined,
-                                      label: s.kanban,
-                                      onTap: () {
-                                        if (!_isKanbanView) {
-                                          AppMotion.selectionHaptic();
-                                          setState(() => _isKanbanView = true);
-                                        }
-                                      },
-                                    ),
-                                    PipelineViewModeButton(
-                                      selected: !_isKanbanView,
-                                      icon: Icons.format_list_bulleted_rounded,
-                                      label: s.list,
-                                      onTap: () {
-                                        if (_isKanbanView) {
-                                          AppMotion.selectionHaptic();
-                                          setState(() => _isKanbanView = false);
-                                        }
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Material(
-                                color: cs.surfaceContainer,
-                                borderRadius: BorderRadius.circular(999),
-                                child: InkWell(
-                                  onTap: () => showTerminalArchiveSheet(
-                                    context: context,
-                                    terminalApps: state.terminalApplications,
-                                    onOpenDetail: (app) =>
-                                        _openDetail(context, app),
-                                  ),
-                                  borderRadius: BorderRadius.circular(999),
-                                  child: Container(
-                                    constraints:
-                                        const BoxConstraints(minHeight: 38),
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 12, vertical: 8),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          Icons.inventory_2_outlined,
-                                          size: 16,
-                                          color: cs.secondary,
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          s.archiveCount(
-                                            state.terminalApplications.length,
-                                          ),
-                                          style: theme.textTheme.labelMedium
-                                              ?.copyWith(
-                                            color: cs.onSecondaryContainer,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                                  color: cs.primary,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: cs.surface,
+                                    width: 1.5,
                                   ),
                                 ),
                               ),
-                            ],
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+
+              final viewSwitcher = Container(
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  color: cs.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    PipelineViewModeButton(
+                      selected: _isKanbanView,
+                      icon: Icons.view_kanban_outlined,
+                      label: s.kanban,
+                      compact: singleRowToolbar,
+                      onTap: () {
+                        if (!_isKanbanView) {
+                          AppMotion.selectionHaptic();
+                          setState(() => _isKanbanView = true);
+                        }
+                      },
+                    ),
+                    PipelineViewModeButton(
+                      selected: !_isKanbanView,
+                      icon: Icons.format_list_bulleted_rounded,
+                      label: s.list,
+                      compact: singleRowToolbar,
+                      onTap: () {
+                        if (_isKanbanView) {
+                          AppMotion.selectionHaptic();
+                          setState(() => _isKanbanView = false);
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              );
+
+              final archivePill = Material(
+                color: cs.surfaceContainer,
+                borderRadius: BorderRadius.circular(999),
+                child: InkWell(
+                  onTap: () => showTerminalArchiveSheet(
+                    context: context,
+                    terminalApps: state.terminalApplications,
+                    onOpenDetail: (app) => _openDetail(context, app),
+                  ),
+                  borderRadius: BorderRadius.circular(999),
+                  child: Container(
+                    constraints: BoxConstraints(
+                      minHeight: singleRowToolbar ? 36 : 38,
+                    ),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: singleRowToolbar ? 10 : 12,
+                      vertical: singleRowToolbar ? 6 : 8,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.inventory_2_outlined,
+                          size: 16,
+                          color: cs.secondary,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          s.archiveCount(state.terminalApplications.length),
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: cs.onSecondaryContainer,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
                     ),
                   ),
+                ),
+              );
+
+              return Column(
+                children: [
+                  // Search + Filter + View Switcher Header
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      16,
+                      useSidebar ? (isCompactHeight ? 6 : 10) : 4,
+                      16,
+                      isCompactHeight ? 2 : 4,
+                    ),
+                    child: singleRowToolbar
+                        ? Row(
+                            children: [
+                              Expanded(child: searchField),
+                              const SizedBox(width: 8),
+                              filterButton,
+                              const SizedBox(width: 8),
+                              viewSwitcher,
+                              const SizedBox(width: 8),
+                              archivePill,
+                            ],
+                          )
+                        : Column(
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(child: searchField),
+                                  const SizedBox(width: 8),
+                                  filterButton,
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+                              SizedBox(
+                                width: double.infinity,
+                                child: Wrap(
+                                  alignment: WrapAlignment.spaceBetween,
+                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: [
+                                    viewSwitcher,
+                                    archivePill,
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                  ),
 
                   PipelineStageFilterBar(
                     stages: allStages,
                     state: state,
+                    compact: isCompactHeight,
                     onSelectAll: () {
                       if (!state.hasStageFilter) return;
                       AppMotion.selectionHaptic();
@@ -278,6 +309,7 @@ class _PipelinePageState extends State<PipelinePage> {
                     PipelineStaleBanner(
                       staleCount: state.staleApplications.length,
                       staleOnlyFilter: state.staleOnlyFilter,
+                      compact: isCompactHeight,
                       onTap: () => context
                           .read<ApplicationsBloc>()
                           .add(const ToggleStaleFilter()),
@@ -362,73 +394,76 @@ class _PipelinePageState extends State<PipelinePage> {
                               ),
                   ),
 
-                  // Compact Pipeline Summary Strip
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 9),
-                      decoration: BoxDecoration(
-                        color: cs.surfaceContainerLow,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Row(
-                              children: [
-                                Icon(Icons.bolt_rounded,
-                                    size: 18, color: cs.primary),
-                                const SizedBox(width: 6),
-                                Flexible(
-                                  child: Text(
-                                    s.activeSummary(
-                                      visibleStageCount,
-                                      state.activeApplications.length,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style:
-                                        theme.textTheme.labelMedium?.copyWith(
-                                      color: cs.onSurface,
-                                      fontWeight: FontWeight.w500,
+                  // Compact Pipeline Summary Strip (omitted on short landscape
+                  // screens to maximize Kanban board height)
+                  if (!isCompactHeight)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 9),
+                        decoration: BoxDecoration(
+                          color: cs.surfaceContainerLow,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Row(
+                                children: [
+                                  Icon(Icons.bolt_rounded,
+                                      size: 18, color: cs.primary),
+                                  const SizedBox(width: 6),
+                                  Flexible(
+                                    child: Text(
+                                      s.activeSummary(
+                                        visibleStageCount,
+                                        state.activeApplications.length,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style:
+                                          theme.textTheme.labelMedium?.copyWith(
+                                        color: cs.onSurface,
+                                        fontWeight: FontWeight.w500,
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          if (state.hasActiveFilters) ...[
-                            const SizedBox(width: 8),
-                            GestureDetector(
-                              onTap: () => context
-                                  .read<ApplicationsBloc>()
-                                  .add(const ResetFilters()),
-                              child: Text(
-                                s.reset,
-                                style: theme.textTheme.labelSmall?.copyWith(
-                                  color: cs.primary,
-                                  fontWeight: FontWeight.w700,
-                                ),
+                                ],
                               ),
                             ),
+                            if (state.hasActiveFilters) ...[
+                              const SizedBox(width: 8),
+                              GestureDetector(
+                                onTap: () => context
+                                    .read<ApplicationsBloc>()
+                                    .add(const ResetFilters()),
+                                child: Text(
+                                  s.reset,
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: cs.primary,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ],
-                        ],
+                        ),
                       ),
                     ),
-                  ),
                 ],
               );
             },
           );
         },
+        ),
       ),
       floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 40),
+        padding: EdgeInsets.only(bottom: isCompactHeight ? 4 : 40),
         child: FloatingActionButton.extended(
           onPressed: () => _openForm(context),
-          icon: const Icon(Icons.add_rounded, size: 22),
+          icon: const Icon(Icons.add_rounded, size: 20),
           label: Text(
             s.trackJob,
             style: const TextStyle(

@@ -57,7 +57,8 @@ class _AppShellState extends State<AppShell> {
     final s = AppLocaleScope.of(context);
     final db = context.read<AppDatabase>();
     final useRail = Responsive.isMediumOrWider(context);
-    final extendRail = Responsive.isExpanded(context);
+    final isCompactHeight = Responsive.isCompactHeight(context);
+    final extendRail = Responsive.isExpanded(context) && !isCompactHeight;
 
     final pages = [
       PipelinePage(
@@ -107,61 +108,128 @@ class _AppShellState extends State<AppShell> {
         }
 
         if (useRail) {
+          final theme = Theme.of(context);
+          final railLeading = Padding(
+            padding: EdgeInsets.fromLTRB(
+              extendRail ? 12 : 6,
+              isCompactHeight ? 6 : 12,
+              extendRail ? 12 : 6,
+              isCompactHeight ? 6 : 12,
+            ),
+            child: extendRail
+                ? Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const LamarLogLogoMark(size: 34, radius: 9, iconSize: 18),
+                      const SizedBox(width: 10),
+                      Text(
+                        'LamarLog',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  )
+                : Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      LamarLogLogoMark(
+                        size: isCompactHeight ? 30 : 34,
+                        radius: 9,
+                        iconSize: isCompactHeight ? 16 : 18,
+                      ),
+                      if (!isCompactHeight) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          'LamarLog',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: cs.onSurface,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ],
+                  ),
+          );
+
           return Scaffold(
             body: Row(
               children: [
                 SafeArea(
                   right: false,
-                  child: NavigationRail(
-                    selectedIndex: _selectedIndex,
-                    extended: extendRail,
-                    labelType: extendRail
-                        ? NavigationRailLabelType.none
-                        : NavigationRailLabelType.all,
-                    backgroundColor: cs.surfaceContainerLowest,
-                    indicatorColor: cs.primaryContainer,
-                    selectedIconTheme:
-                        const IconThemeData(color: Colors.white, size: 22),
-                    unselectedIconTheme:
-                        IconThemeData(color: cs.secondary, size: 22),
-                    selectedLabelTextStyle: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: cs.primary,
-                    ),
-                    unselectedLabelTextStyle: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: cs.secondary,
-                    ),
-                    onDestinationSelected: (index) {
-                      if (index != _selectedIndex) {
-                        AppMotion.selectionHaptic();
-                        setState(() => _selectedIndex = index);
-                      }
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      return SingleChildScrollView(
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minHeight: constraints.maxHeight,
+                          ),
+                          child: IntrinsicHeight(
+                            child: NavigationRail(
+                              selectedIndex: _selectedIndex,
+                              extended: extendRail,
+                              minWidth: isCompactHeight ? 64 : 72,
+                              groupAlignment: -1.0,
+                              leading: railLeading,
+                              labelType: extendRail
+                                  ? NavigationRailLabelType.none
+                                  : (isCompactHeight
+                                      ? NavigationRailLabelType.selected
+                                      : NavigationRailLabelType.all),
+                              backgroundColor: cs.surfaceContainerLowest,
+                              indicatorColor: cs.primaryContainer,
+                              selectedIconTheme: const IconThemeData(
+                                  color: Colors.white, size: 21),
+                              unselectedIconTheme:
+                                  IconThemeData(color: cs.secondary, size: 21),
+                              selectedLabelTextStyle: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: cs.primary,
+                              ),
+                              unselectedLabelTextStyle: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                                color: cs.secondary,
+                              ),
+                              onDestinationSelected: (index) {
+                                if (index != _selectedIndex) {
+                                  AppMotion.selectionHaptic();
+                                  setState(() => _selectedIndex = index);
+                                }
+                              },
+                              destinations: [
+                                NavigationRailDestination(
+                                  icon: const Icon(Icons.view_column_outlined),
+                                  selectedIcon:
+                                      const Icon(Icons.view_column_rounded),
+                                  label: Text(s.navPipeline),
+                                ),
+                                NavigationRailDestination(
+                                  icon: buildNotifIcon(selected: false),
+                                  selectedIcon: buildNotifIcon(selected: true),
+                                  label: Text(s.navNotifications),
+                                ),
+                                NavigationRailDestination(
+                                  icon: const Icon(Icons.bar_chart_outlined),
+                                  selectedIcon:
+                                      const Icon(Icons.bar_chart_rounded),
+                                  label: Text(s.navAnalytics),
+                                ),
+                                NavigationRailDestination(
+                                  icon: const Icon(Icons.tune_outlined),
+                                  selectedIcon: const Icon(Icons.tune_rounded),
+                                  label: Text(s.navSettings),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
                     },
-                    destinations: [
-                      NavigationRailDestination(
-                        icon: const Icon(Icons.view_column_outlined),
-                        selectedIcon: const Icon(Icons.view_column_rounded),
-                        label: Text(s.navPipeline),
-                      ),
-                      NavigationRailDestination(
-                        icon: buildNotifIcon(selected: false),
-                        selectedIcon: buildNotifIcon(selected: true),
-                        label: Text(s.navNotifications),
-                      ),
-                      NavigationRailDestination(
-                        icon: const Icon(Icons.bar_chart_outlined),
-                        selectedIcon: const Icon(Icons.bar_chart_rounded),
-                        label: Text(s.navAnalytics),
-                      ),
-                      NavigationRailDestination(
-                        icon: const Icon(Icons.tune_outlined),
-                        selectedIcon: const Icon(Icons.tune_rounded),
-                        label: Text(s.navSettings),
-                      ),
-                    ],
                   ),
                 ),
                 VerticalDivider(

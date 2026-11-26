@@ -38,21 +38,25 @@ class PipelineKanbanBoard extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final colWidth = Responsive.kanbanColumnWidth(constraints.maxWidth);
+        final compactHeight = constraints.maxHeight < 280;
+        final colWidth = Responsive.kanbanColumnWidth(
+          constraints.maxWidth,
+          compactHeight: compactHeight,
+        );
         final extraManageCol =
             onManageStages != null && !state.hasStageFilter ? 1 : 0;
 
         return ListView.separated(
           scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+          padding: EdgeInsets.fromLTRB(16, 4, 16, compactHeight ? 6 : 8),
           itemCount: stages.length + extraManageCol,
-          separatorBuilder: (_, _) => const SizedBox(width: 14),
+          separatorBuilder: (_, _) => SizedBox(width: compactHeight ? 10 : 14),
           itemBuilder: (context, index) {
             if (index == stages.length) {
               final cs = Theme.of(context).colorScheme;
               final theme = Theme.of(context);
               return SizedBox(
-                width: (colWidth * 0.72).clamp(180.0, 240.0),
+                width: (colWidth * 0.72).clamp(170.0, 232.0),
                 child: Material(
                   color: cs.surfaceContainerLow.withValues(alpha: 0.55),
                   borderRadius: BorderRadius.circular(18),
@@ -60,42 +64,47 @@ class PipelineKanbanBoard extends StatelessWidget {
                     onTap: onManageStages,
                     borderRadius: BorderRadius.circular(18),
                     child: Container(
-                      padding: const EdgeInsets.all(20),
+                      padding: EdgeInsets.all(compactHeight ? 12 : 20),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(18),
                         border: Border.all(
                           color: cs.outlineVariant.withValues(alpha: 0.55),
                         ),
                       ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            width: 48,
-                            height: 48,
-                            decoration: BoxDecoration(
-                              color: cs.primaryFixed,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.add_rounded,
-                              color: cs.onPrimaryFixed,
-                              size: 26,
-                            ),
+                      child: Center(
+                        child: SingleChildScrollView(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                width: compactHeight ? 38 : 48,
+                                height: compactHeight ? 38 : 48,
+                                decoration: BoxDecoration(
+                                  color: cs.primaryFixed,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.add_rounded,
+                                  color: cs.onPrimaryFixed,
+                                  size: compactHeight ? 22 : 26,
+                                ),
+                              ),
+                              SizedBox(height: compactHeight ? 8 : 12),
+                              Text(
+                                s.managePipelineStages,
+                                textAlign: TextAlign.center,
+                                style: theme.textTheme.titleSmall,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                s.stageCountBadge(stages.length),
+                                textAlign: TextAlign.center,
+                                style: theme.textTheme.bodySmall,
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 12),
-                          Text(
-                            s.managePipelineStages,
-                            textAlign: TextAlign.center,
-                            style: theme.textTheme.titleSmall,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            s.stageCountBadge(stages.length),
-                            textAlign: TextAlign.center,
-                            style: theme.textTheme.bodySmall,
-                          ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
@@ -127,7 +136,7 @@ class PipelineKanbanBoard extends StatelessWidget {
                   duration: AppMotion.duration(context, AppMotion.fast),
                   curve: AppMotion.standardCurve,
                   width: colWidth,
-                  padding: const EdgeInsets.all(10),
+                  padding: EdgeInsets.all(compactHeight ? 8 : 10),
                   decoration: BoxDecoration(
                     color: isHighlighted
                         ? cs.primaryContainer.withValues(alpha: 0.1)
@@ -156,8 +165,10 @@ class PipelineKanbanBoard extends StatelessWidget {
                                     : () => onRenameStage!(stage),
                                 borderRadius: BorderRadius.circular(8),
                                 child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      vertical: 6, horizontal: 2),
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: compactHeight ? 3 : 6,
+                                    horizontal: 2,
+                                  ),
                                   child: Row(
                                     children: [
                                       Container(
@@ -203,8 +214,8 @@ class PipelineKanbanBoard extends StatelessWidget {
                               ),
                             ),
                             SizedBox(
-                              width: 44,
-                              height: 44,
+                              width: compactHeight ? 36 : 44,
+                              height: compactHeight ? 36 : 44,
                               child: IconButton(
                                 padding: EdgeInsets.zero,
                                 tooltip: s.addToStage(stageTitle),
@@ -219,63 +230,81 @@ class PipelineKanbanBoard extends StatelessWidget {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 10),
+                      SizedBox(height: compactHeight ? 6 : 10),
 
                       // Cards List or Dropzone Empty State
                       Expanded(
                         child: apps.isEmpty
                             ? Center(
-                                child: Container(
-                                  width: double.infinity,
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 16, vertical: 24),
-                                  decoration: BoxDecoration(
-                                    color: cs.surfaceContainerLowest
-                                        .withValues(alpha: 0.55),
-                                    borderRadius: BorderRadius.circular(14),
-                                    border: Border.all(
-                                      color: cs.outlineVariant
-                                          .withValues(alpha: 0.5),
+                                child: SingleChildScrollView(
+                                  child: Container(
+                                    width: double.infinity,
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: compactHeight ? 12 : 24,
                                     ),
-                                  ),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.drag_indicator_rounded,
-                                        size: 24,
-                                        color: cs.outline,
+                                    decoration: BoxDecoration(
+                                      color: cs.surfaceContainerLowest
+                                          .withValues(alpha: 0.55),
+                                      borderRadius: BorderRadius.circular(14),
+                                      border: Border.all(
+                                        color: cs.outlineVariant
+                                            .withValues(alpha: 0.5),
                                       ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        s.noJobsInStage(stageTitle),
-                                        style: theme.textTheme.titleSmall
-                                            ?.copyWith(
-                                          color: cs.onSurfaceVariant,
+                                    ),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.drag_indicator_rounded,
+                                          size: compactHeight ? 20 : 24,
+                                          color: cs.outline,
                                         ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        s.dropOrAddHint,
-                                        textAlign: TextAlign.center,
-                                        style: theme.textTheme.bodySmall,
-                                      ),
-                                      const SizedBox(height: 12),
-                                      TextButton.icon(
-                                        onPressed: () => onAddToStage(stage),
-                                        icon: const Icon(Icons.add_rounded,
-                                            size: 16),
-                                        label: Text(s.addToStage(stageTitle)),
-                                      ),
-                                    ],
+                                        SizedBox(
+                                            height: compactHeight ? 4 : 8),
+                                        Text(
+                                          s.noJobsInStage(stageTitle),
+                                          textAlign: TextAlign.center,
+                                          style: theme.textTheme.titleSmall
+                                              ?.copyWith(
+                                            color: cs.onSurfaceVariant,
+                                          ),
+                                        ),
+                                        if (!compactHeight) ...[
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            s.dropOrAddHint,
+                                            textAlign: TextAlign.center,
+                                            style: theme.textTheme.bodySmall,
+                                          ),
+                                        ],
+                                        SizedBox(
+                                            height: compactHeight ? 6 : 12),
+                                        TextButton.icon(
+                                          style: compactHeight
+                                              ? TextButton.styleFrom(
+                                                  visualDensity:
+                                                      VisualDensity.compact,
+                                                )
+                                              : null,
+                                          onPressed: () => onAddToStage(stage),
+                                          icon: const Icon(Icons.add_rounded,
+                                              size: 16),
+                                          label:
+                                              Text(s.addToStage(stageTitle)),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               )
                             : ListView.separated(
-                                padding: const EdgeInsets.only(bottom: 72),
+                                padding: EdgeInsets.only(
+                                  bottom: compactHeight ? 56 : 72,
+                                ),
                                 itemCount: apps.length + 1,
                                 separatorBuilder: (_, _) =>
-                                    const SizedBox(height: 10),
+                                    SizedBox(height: compactHeight ? 8 : 10),
                                 itemBuilder: (context, cardIdx) {
                                   if (cardIdx == apps.length) {
                                     return Material(
