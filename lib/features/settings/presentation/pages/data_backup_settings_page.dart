@@ -82,10 +82,15 @@ class _DataBackupSettingsPageState extends State<DataBackupSettingsPage> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            s.localStorageUsage,
-                            style: theme.textTheme.titleSmall,
+                          Expanded(
+                            child: Text(
+                              s.localStorageUsage,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.titleSmall,
+                            ),
                           ),
+                          const SizedBox(width: 8),
                           Text(
                             stats.formattedSize,
                             style: theme.textTheme.labelMedium?.copyWith(

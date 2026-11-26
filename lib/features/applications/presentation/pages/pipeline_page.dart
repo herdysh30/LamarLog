@@ -161,7 +161,7 @@ class _PipelinePageState extends State<PipelinePage> {
                 ),
               );
 
-              final viewSwitcher = Container(
+              Widget buildViewSwitcher({required bool iconOnly}) => Container(
                 padding: const EdgeInsets.all(3),
                 decoration: BoxDecoration(
                   color: cs.surfaceContainerLow,
@@ -175,6 +175,7 @@ class _PipelinePageState extends State<PipelinePage> {
                       icon: Icons.view_kanban_outlined,
                       label: s.kanban,
                       compact: singleRowToolbar,
+                      iconOnly: iconOnly,
                       onTap: () {
                         if (!_isKanbanView) {
                           AppMotion.selectionHaptic();
@@ -187,6 +188,7 @@ class _PipelinePageState extends State<PipelinePage> {
                       icon: Icons.format_list_bulleted_rounded,
                       label: s.list,
                       compact: singleRowToolbar,
+                      iconOnly: iconOnly,
                       onTap: () {
                         if (_isKanbanView) {
                           AppMotion.selectionHaptic();
@@ -198,7 +200,7 @@ class _PipelinePageState extends State<PipelinePage> {
                 ),
               );
 
-              final archivePill = Material(
+              Widget buildArchivePill({required bool compactCount}) => Material(
                 color: cs.surfaceContainer,
                 borderRadius: BorderRadius.circular(999),
                 child: InkWell(
@@ -224,9 +226,13 @@ class _PipelinePageState extends State<PipelinePage> {
                           size: 16,
                           color: cs.secondary,
                         ),
-                        const SizedBox(width: 6),
+                        const SizedBox(width: 5),
                         Text(
-                          s.archiveCount(state.terminalApplications.length),
+                          compactCount
+                              ? '${state.terminalApplications.length}'
+                              : s.archiveCount(
+                                  state.terminalApplications.length,
+                                ),
                           style: theme.textTheme.labelMedium?.copyWith(
                             color: cs.onSecondaryContainer,
                             fontWeight: FontWeight.w600,
@@ -248,43 +254,54 @@ class _PipelinePageState extends State<PipelinePage> {
                       16,
                       isCompactHeight ? 2 : 4,
                     ),
-                    child: singleRowToolbar
-                        ? Row(
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final textScale =
+                            MediaQuery.textScalerOf(context).scale(1.0);
+                        final tightSingleRow = singleRowToolbar &&
+                            (constraints.maxWidth < 560 * textScale);
+
+                        if (singleRowToolbar) {
+                          return Row(
                             children: [
                               Expanded(child: searchField),
-                              const SizedBox(width: 8),
+                              const SizedBox(width: 6),
                               filterButton,
-                              const SizedBox(width: 8),
-                              viewSwitcher,
-                              const SizedBox(width: 8),
-                              archivePill,
+                              const SizedBox(width: 6),
+                              buildViewSwitcher(iconOnly: tightSingleRow),
+                              const SizedBox(width: 6),
+                              buildArchivePill(compactCount: tightSingleRow),
                             ],
-                          )
-                        : Column(
-                            children: [
-                              Row(
+                          );
+                        }
+
+                        return Column(
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(child: searchField),
+                                const SizedBox(width: 8),
+                                filterButton,
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            SizedBox(
+                              width: double.infinity,
+                              child: Wrap(
+                                alignment: WrapAlignment.spaceBetween,
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                spacing: 8,
+                                runSpacing: 8,
                                 children: [
-                                  Expanded(child: searchField),
-                                  const SizedBox(width: 8),
-                                  filterButton,
+                                  buildViewSwitcher(iconOnly: false),
+                                  buildArchivePill(compactCount: false),
                                 ],
                               ),
-                              const SizedBox(height: 10),
-                              SizedBox(
-                                width: double.infinity,
-                                child: Wrap(
-                                  alignment: WrapAlignment.spaceBetween,
-                                  crossAxisAlignment: WrapCrossAlignment.center,
-                                  spacing: 8,
-                                  runSpacing: 8,
-                                  children: [
-                                    viewSwitcher,
-                                    archivePill,
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
                   ),
 
                   PipelineStageFilterBar(

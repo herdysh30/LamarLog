@@ -77,30 +77,25 @@ class _OnboardingPageState extends State<OnboardingPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [cs.primaryContainer, cs.primary],
+                  Expanded(
+                    child: Row(
+                      children: [
+                        const LamarLogLogoMark(size: 32, radius: 9, iconSize: 18),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            'LamarLog',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.headlineSmall,
                           ),
-                          borderRadius: BorderRadius.circular(9),
                         ),
-                        child: const Icon(
-                          Icons.layers_rounded,
-                          color: Colors.white,
-                          size: 18,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text('LamarLog', style: theme.textTheme.headlineSmall),
-                    ],
+                      ],
+                    ),
                   ),
+                  const SizedBox(width: 8),
                   Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       // Quick EN / ID switcher
                       Container(
@@ -118,7 +113,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                               child: AnimatedContainer(
                                 duration: const Duration(milliseconds: 150),
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 9, vertical: 4),
+                                    horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
                                   color: selected
                                       ? cs.primaryContainer
@@ -140,8 +135,13 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         ),
                       ),
                       if (!isLast) ...[
-                        const SizedBox(width: 6),
+                        const SizedBox(width: 4),
                         TextButton(
+                          style: TextButton.styleFrom(
+                            visualDensity: VisualDensity.compact,
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            minimumSize: Size.zero,
+                          ),
                           onPressed: widget.onCompleted,
                           child: Text(s.skip),
                         ),
@@ -367,7 +367,14 @@ class _MiniStageColumn extends StatelessWidget {
                     BoxDecoration(color: dotColor, shape: BoxShape.circle),
               ),
               const SizedBox(width: 6),
-              Text(label, style: Theme.of(context).textTheme.labelSmall),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelSmall,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 8),

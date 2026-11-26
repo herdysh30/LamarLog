@@ -236,11 +236,15 @@ class ApplicationCard extends StatelessWidget {
 
           // Clean Footer: Job Type or Status Chip + Platform + Dwell Time / Stale Badge
           const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Flexible(
-                child: Wrap(
+          SizedBox(
+            width: double.infinity,
+            child: Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              runSpacing: 6,
+              children: [
+                Wrap(
                   spacing: 6,
                   runSpacing: 6,
                   crossAxisAlignment: WrapCrossAlignment.center,
@@ -265,12 +269,14 @@ class ApplicationCard extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(width: 5),
-                            Text(
-                              statusLabel,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                color: cs.onSurface,
+                            Flexible(
+                              child: Text(
+                                statusLabel,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: cs.onSurface,
+                                ),
                               ),
                             ),
                           ],
@@ -286,13 +292,15 @@ class ApplicationCard extends StatelessWidget {
                             color: cs.outline,
                           ),
                           const SizedBox(width: 5),
-                          Text(
-                            s.jobTypeLabel(jobType),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              color: cs.onSurfaceVariant,
-                              fontWeight: FontWeight.w500,
+                          Flexible(
+                            child: Text(
+                              s.jobTypeLabel(jobType),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: cs.onSurfaceVariant,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
                         ],
@@ -318,65 +326,70 @@ class ApplicationCard extends StatelessWidget {
                       ),
                   ],
                 ),
-              ),
-              const SizedBox(width: 8),
-              if (isStale)
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: brightness == Brightness.dark
-                        ? const Color(0xFF3E2C0A)
-                        : const Color(0xFFFFF3CD),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.notifications_active_outlined,
-                        size: 12,
-                        color: brightness == Brightness.dark
-                            ? const Color(0xFFFCD34D)
-                            : const Color(0xFF92400E),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        s.needsFollowUpBadge(daysInStage),
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          fontSize: 10.5,
+                if (isStale)
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: brightness == Brightness.dark
+                          ? const Color(0xFF3E2C0A)
+                          : const Color(0xFFFFF3CD),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.notifications_active_outlined,
+                          size: 12,
                           color: brightness == Brightness.dark
                               ? const Color(0xFFFCD34D)
                               : const Color(0xFF92400E),
-                          fontWeight: FontWeight.w700,
+                        ),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            s.needsFollowUpBadge(daysInStage),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              fontSize: 10.5,
+                              color: brightness == Brightness.dark
+                                  ? const Color(0xFFFCD34D)
+                                  : const Color(0xFF92400E),
+                              fontWeight: FontWeight.w700,
+                              fontFeatures: const [
+                                FontFeature.tabularFigures()
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.schedule_rounded,
+                        size: 13,
+                        color: cs.outline,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        s.daysInStage(daysInStage),
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: cs.outline,
+                          fontWeight: FontWeight.w500,
                           fontFeatures: const [FontFeature.tabularFigures()],
                         ),
                       ),
                     ],
                   ),
-                )
-              else
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.schedule_rounded,
-                      size: 13,
-                      color: cs.outline,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      s.daysInStage(daysInStage),
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: cs.outline,
-                        fontWeight: FontWeight.w500,
-                        fontFeatures: const [FontFeature.tabularFigures()],
-                      ),
-                    ),
-                  ],
-                ),
               ],
             ),
+          ),
           ],
         ),
       ),

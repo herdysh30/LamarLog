@@ -293,32 +293,34 @@ class ApplicationTimelineCard extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(s.addNote),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: titleCtrl,
-              textCapitalization: TextCapitalization.sentences,
-              decoration: InputDecoration(
-                labelText: s.isId ? 'Judul' : 'Title',
-                hintText: s.isId
-                    ? 'cth. Screening HR Selesai'
-                    : 'e.g. Recruiter Screen Completed',
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: titleCtrl,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: InputDecoration(
+                  labelText: s.isId ? 'Judul' : 'Title',
+                  hintText: s.isId
+                      ? 'cth. Screening HR Selesai'
+                      : 'e.g. Recruiter Screen Completed',
+                ),
               ),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: noteCtrl,
-              maxLines: 3,
-              textCapitalization: TextCapitalization.sentences,
-              decoration: InputDecoration(
-                labelText: s.isId ? 'Catatan' : 'Details',
-                hintText: s.isId
-                    ? 'Pertanyaan interview, kisaran gaji, langkah selanjutnya...'
-                    : 'Questions asked, salary range, next steps...',
+              const SizedBox(height: 10),
+              TextField(
+                controller: noteCtrl,
+                maxLines: 3,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: InputDecoration(
+                  labelText: s.isId ? 'Catatan' : 'Details',
+                  hintText: s.isId
+                      ? 'Pertanyaan interview, kisaran gaji, langkah selanjutnya...'
+                      : 'Questions asked, salary range, next steps...',
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -355,26 +357,28 @@ class ApplicationTimelineCard extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(s.editNote),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: titleCtrl,
-              textCapitalization: TextCapitalization.sentences,
-              decoration: InputDecoration(
-                labelText: s.isId ? 'Judul' : 'Title',
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: titleCtrl,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: InputDecoration(
+                  labelText: s.isId ? 'Judul' : 'Title',
+                ),
               ),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: noteCtrl,
-              maxLines: 3,
-              textCapitalization: TextCapitalization.sentences,
-              decoration: InputDecoration(
-                labelText: s.isId ? 'Catatan' : 'Details',
+              const SizedBox(height: 10),
+              TextField(
+                controller: noteCtrl,
+                maxLines: 3,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: InputDecoration(
+                  labelText: s.isId ? 'Catatan' : 'Details',
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         actions: [
           TextButton(

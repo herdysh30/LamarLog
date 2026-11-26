@@ -57,27 +57,35 @@ void showTerminalArchiveSheet({
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          Icon(Icons.inventory_2_outlined,
-                              color: cs.secondary, size: 22),
-                          const SizedBox(width: 8),
-                          Text(s.terminalArchive,
-                              style: theme.textTheme.headlineSmall),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: cs.surfaceContainerHigh,
-                              borderRadius: BorderRadius.circular(999),
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Icon(Icons.inventory_2_outlined,
+                                color: cs.secondary, size: 22),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                s.terminalArchive,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.headlineSmall,
+                              ),
                             ),
-                            child: Text(
-                              '${terminalApps.length}',
-                              style: theme.textTheme.labelSmall,
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: cs.surfaceContainerHigh,
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: Text(
+                                '${terminalApps.length}',
+                                style: theme.textTheme.labelSmall,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                       IconButton(
                         onPressed: () => Navigator.of(ctx).pop(),

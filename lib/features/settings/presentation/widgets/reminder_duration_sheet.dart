@@ -76,9 +76,13 @@ Future<int?> showReminderDurationSheet({
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        s.reminderPickOffsetTitle,
-                        style: theme.textTheme.headlineSmall,
+                      Expanded(
+                        child: Text(
+                          s.reminderPickOffsetTitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.headlineSmall,
+                        ),
                       ),
                       IconButton(
                         onPressed: () => Navigator.of(ctx).pop(),
@@ -125,60 +129,86 @@ Future<int?> showReminderDurationSheet({
                   const SizedBox(height: 18),
                   Text(s.reminderCustomTime, style: theme.textTheme.labelLarge),
                   const SizedBox(height: 8),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 96,
-                        child: TextField(
-                          controller: ctrl,
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly,
-                            LengthLimitingTextInputFormatter(5),
-                          ],
-                          onChanged: (_) {
-                            if (errorText != null) {
-                              setSheetState(() => errorText = null);
-                            }
-                          },
-                          decoration: const InputDecoration(
-                            hintText: '45',
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 12,
-                            ),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final valueField = TextField(
+                        controller: ctrl,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          LengthLimitingTextInputFormatter(5),
+                        ],
+                        onChanged: (_) {
+                          if (errorText != null) {
+                            setSheetState(() => errorText = null);
+                          }
+                        },
+                        decoration: const InputDecoration(
+                          hintText: '45',
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 12,
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: SegmentedButton<_DurationUnit>(
-                          showSelectedIcon: false,
-                          segments: [
-                            ButtonSegment(
-                              value: _DurationUnit.minutes,
-                              label: Text(s.reminderUnitMinutes),
+                      );
+
+                      final unitSelector = SegmentedButton<_DurationUnit>(
+                        showSelectedIcon: false,
+                        segments: [
+                          ButtonSegment(
+                            value: _DurationUnit.minutes,
+                            label: Text(
+                              s.reminderUnitMinutes,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            ButtonSegment(
-                              value: _DurationUnit.hours,
-                              label: Text(s.reminderUnitHours),
+                          ),
+                          ButtonSegment(
+                            value: _DurationUnit.hours,
+                            label: Text(
+                              s.reminderUnitHours,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            ButtonSegment(
-                              value: _DurationUnit.days,
-                              label: Text(s.reminderUnitDays),
+                          ),
+                          ButtonSegment(
+                            value: _DurationUnit.days,
+                            label: Text(
+                              s.reminderUnitDays,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
+                          ),
+                        ],
+                        selected: {unit},
+                        onSelectionChanged: (sel) {
+                          setSheetState(() {
+                            unit = sel.first;
+                            errorText = null;
+                          });
+                        },
+                      );
+
+                      if (constraints.maxWidth < 340) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            valueField,
+                            const SizedBox(height: 8),
+                            unitSelector,
                           ],
-                          selected: {unit},
-                          onSelectionChanged: (sel) {
-                            setSheetState(() {
-                              unit = sel.first;
-                              errorText = null;
-                            });
-                          },
-                        ),
-                      ),
-                    ],
+                        );
+                      }
+
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(width: 88, child: valueField),
+                          const SizedBox(width: 8),
+                          Expanded(child: unitSelector),
+                        ],
+                      );
+                    },
                   ),
                   const SizedBox(height: 6),
                   Text(

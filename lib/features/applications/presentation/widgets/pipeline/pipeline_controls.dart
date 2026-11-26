@@ -13,6 +13,7 @@ class PipelineViewModeButton extends StatelessWidget {
     required this.label,
     required this.onTap,
     this.compact = false,
+    this.iconOnly = false,
   });
 
   final bool selected;
@@ -20,18 +21,19 @@ class PipelineViewModeButton extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
   final bool compact;
+  final bool iconOnly;
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final theme = Theme.of(context);
 
-    return GestureDetector(
+    final child = GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 160),
         padding: EdgeInsets.symmetric(
-          horizontal: compact ? 9 : 12,
+          horizontal: iconOnly ? 8 : (compact ? 9 : 12),
           vertical: compact ? 5 : 7,
         ),
         decoration: BoxDecoration(
@@ -55,18 +57,21 @@ class PipelineViewModeButton extends StatelessWidget {
               size: 16,
               color: selected ? cs.primary : cs.secondary,
             ),
-            const SizedBox(width: 5),
-            Text(
-              label,
-              style: theme.textTheme.labelMedium?.copyWith(
-                color: selected ? cs.primary : cs.secondary,
-                fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+            if (!iconOnly) ...[
+              const SizedBox(width: 5),
+              Text(
+                label,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: selected ? cs.primary : cs.secondary,
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                ),
               ),
-            ),
+            ],
           ],
         ),
       ),
     );
+    return iconOnly ? Tooltip(message: label, child: child) : child;
   }
 }
 

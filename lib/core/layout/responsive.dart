@@ -5,11 +5,15 @@ abstract final class Responsive {
   static const double mediumBreakpoint = 600;
   static const double expandedBreakpoint = 840;
 
-  static bool isCompact(BuildContext context) =>
-      MediaQuery.sizeOf(context).width < mediumBreakpoint;
+  static bool isCompact(BuildContext context) => !isMediumOrWider(context);
 
-  static bool isMediumOrWider(BuildContext context) =>
-      MediaQuery.sizeOf(context).width >= mediumBreakpoint;
+  /// True on tablets and landscape phones (including small 568x320 landscape)
+  /// so a compact side NavigationRail replaces the bottom bar + top AppBar.
+  static bool isMediumOrWider(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    return size.width >= mediumBreakpoint ||
+        (size.height < 500 && size.width >= 480);
+  }
 
   static bool isExpanded(BuildContext context) =>
       MediaQuery.sizeOf(context).width >= expandedBreakpoint;

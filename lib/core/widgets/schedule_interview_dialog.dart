@@ -31,83 +31,93 @@ Future<void> showScheduleInterviewDialog({
     builder: (ctx) => StatefulBuilder(
       builder: (ctx, setDialogState) => AlertDialog(
         title: Text(title ?? s.interviewSchedule),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: roundCtrl,
-              decoration: InputDecoration(
-                labelText: s.isId ? 'Tahap Interview' : 'Round Name',
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: roundCtrl,
+                decoration: InputDecoration(
+                  labelText: s.isId ? 'Tahap Interview' : 'Round Name',
+                ),
               ),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: linkCtrl,
-              decoration: InputDecoration(
-                labelText: s.isId
-                    ? 'Link Meeting (opsional)'
-                    : 'Meeting Link (optional)',
+              const SizedBox(height: 10),
+              TextField(
+                controller: linkCtrl,
+                decoration: InputDecoration(
+                  labelText: s.isId
+                      ? 'Link Meeting (opsional)'
+                      : 'Meeting Link (optional)',
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () async {
-                      final picked = await showDatePicker(
-                        context: ctx,
-                        initialDate: selectedDate,
-                        firstDate: DateTime.now(),
-                        lastDate:
-                            DateTime.now().add(const Duration(days: 365)),
-                      );
-                      if (picked != null) {
-                        setDialogState(() => selectedDate = picked);
-                      }
-                    },
-                    icon: const Icon(Icons.calendar_today_outlined, size: 15),
-                    label: Text(DateFormat('dd MMM').format(selectedDate)),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () async {
+                        final picked = await showDatePicker(
+                          context: ctx,
+                          initialDate: selectedDate,
+                          firstDate: DateTime.now(),
+                          lastDate:
+                              DateTime.now().add(const Duration(days: 365)),
+                        );
+                        if (picked != null) {
+                          setDialogState(() => selectedDate = picked);
+                        }
+                      },
+                      icon: const Icon(Icons.calendar_today_outlined, size: 15),
+                      label: Text(
+                        DateFormat('dd MMM').format(selectedDate),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () async {
-                      final picked = await showTimePicker(
-                        context: ctx,
-                        initialTime: selectedTime,
-                      );
-                      if (picked != null) {
-                        setDialogState(() => selectedTime = picked);
-                      }
-                    },
-                    icon: const Icon(Icons.access_time_rounded, size: 15),
-                    label: Text(selectedTime.format(ctx)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () async {
+                        final picked = await showTimePicker(
+                          context: ctx,
+                          initialTime: selectedTime,
+                        );
+                        if (picked != null) {
+                          setDialogState(() => selectedTime = picked);
+                        }
+                      },
+                      icon: const Icon(Icons.access_time_rounded, size: 15),
+                      label: Text(
+                        selectedTime.format(ctx),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Icon(
-                  s.reminderSchedule.isEmpty
-                      ? Icons.notifications_off_outlined
-                      : Icons.notifications_active_outlined,
-                  size: 15,
-                  color: Theme.of(ctx).colorScheme.secondary,
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    '${s.reminderAutoPreviewPrefix}: ${s.reminderSchedule.formatSummary(isId: s.isId, short: true)}',
-                    style: Theme.of(ctx).textTheme.bodySmall,
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Icon(
+                    s.reminderSchedule.isEmpty
+                        ? Icons.notifications_off_outlined
+                        : Icons.notifications_active_outlined,
+                    size: 15,
+                    color: Theme.of(ctx).colorScheme.secondary,
                   ),
-                ),
-              ],
-            ),
-          ],
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      '${s.reminderAutoPreviewPrefix}: ${s.reminderSchedule.formatSummary(isId: s.isId, short: true)}',
+                      style: Theme.of(ctx).textTheme.bodySmall,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(

@@ -277,12 +277,16 @@ class ApplicationHeroCard extends StatelessWidget {
                   Icon(Icons.calendar_today_outlined,
                       size: 14, color: cs.secondary),
                   const SizedBox(width: 6),
-                  Text(
-                    app.appliedAt != null
-                        ? s.appliedOn(DateFormat('dd MMM yyyy')
-                            .format(app.appliedAt!.toLocal()))
-                        : s.notAppliedYet,
-                    style: theme.textTheme.bodySmall,
+                  Flexible(
+                    child: Text(
+                      app.appliedAt != null
+                          ? s.appliedOn(DateFormat('dd MMM yyyy')
+                              .format(app.appliedAt!.toLocal()))
+                          : s.notAppliedYet,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall,
+                    ),
                   ),
                 ],
               ),

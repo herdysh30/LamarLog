@@ -22,22 +22,34 @@ void showPipelineFilterSheet(BuildContext context, ApplicationsState state) {
         final theme = Theme.of(ctx);
         final cs = theme.colorScheme;
 
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        return SafeArea(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(ctx).size.height * 0.85,
+            ),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(s.pipelineFilter, style: theme.textTheme.headlineSmall),
-                  IconButton(
-                    onPressed: () => Navigator.of(ctx).pop(),
-                    icon: const Icon(Icons.close_rounded),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          s.pipelineFilter,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.headlineSmall,
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.of(ctx).pop(),
+                        icon: const Icon(Icons.close_rounded),
+                      ),
+                    ],
                   ),
-                ],
-              ),
               const SizedBox(height: 12),
               Text(s.workplaceStyle, style: theme.textTheme.labelMedium),
               const SizedBox(height: 8),
@@ -157,6 +169,8 @@ void showPipelineFilterSheet(BuildContext context, ApplicationsState state) {
                 ],
               ),
             ],
+          ),
+            ),
           ),
         );
       },

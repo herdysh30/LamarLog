@@ -219,17 +219,25 @@ Future<void> showPipelineStagesManagerSheet(
                           children: [
                             Text(
                               s.managePipelineStages,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: theme.textTheme.headlineSmall,
                             ),
                             const SizedBox(height: 2),
                             Text(
                               s.stageCountBadge(working.length),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: theme.textTheme.bodySmall,
                             ),
                           ],
                         ),
                       ),
+                      const SizedBox(width: 6),
                       TextButton(
+                        style: TextButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                        ),
                         onPressed: () {
                           setSheetState(() {
                             working
@@ -246,9 +254,11 @@ Future<void> showPipelineStagesManagerSheet(
                   const SizedBox(height: 6),
                   Text(
                     s.reorderOrEditHint,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.bodySmall,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   Flexible(
                     child: ListView.separated(
                       shrinkWrap: true,

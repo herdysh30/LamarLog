@@ -367,30 +367,39 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage>
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 16),
                   child: SurfaceCard(
-                    child: Row(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Icon(
-                          Icons.sync_rounded,
-                          color: cs.primary,
-                          size: 22,
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(
+                              Icons.sync_rounded,
+                              color: cs.primary,
+                              size: 22,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                s.pendingRemindersCount(inactive.length),
+                                style: theme.textTheme.bodyMedium,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            s.pendingRemindersCount(inactive.length),
-                            style: theme.textTheme.bodyMedium,
+                        const SizedBox(height: 10),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: FilledButton.tonal(
+                            onPressed: () async {
+                              if (!enabled) {
+                                await _handleRequestPermission();
+                              } else {
+                                await _syncInactiveReminders();
+                              }
+                            },
+                            child: Text(s.syncPendingReminders),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        FilledButton.tonal(
-                          onPressed: () async {
-                            if (!enabled) {
-                              await _handleRequestPermission();
-                            } else {
-                              await _syncInactiveReminders();
-                            }
-                          },
-                          child: Text(s.syncPendingReminders),
                         ),
                       ],
                     ),
