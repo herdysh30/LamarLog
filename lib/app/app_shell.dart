@@ -5,6 +5,7 @@ import '../core/database/app_database.dart';
 import '../core/l10n/app_strings.dart';
 import '../core/layout/responsive.dart';
 import '../core/models/pipeline_stage_config.dart';
+import '../core/models/reminder_schedule_config.dart';
 import '../core/motion/app_motion.dart';
 import '../core/widgets/applyflow_widgets.dart';
 import '../features/analytics/presentation/pages/analytics_page.dart';
@@ -27,6 +28,7 @@ class AppShell extends StatefulWidget {
     required this.onLanguageChanged,
     required this.onRenameStage,
     required this.onPipelineStagesChanged,
+    this.onReminderScheduleChanged,
   });
 
   final ThemeMode themeMode;
@@ -39,6 +41,7 @@ class AppShell extends StatefulWidget {
   final ValueChanged<String> onLanguageChanged;
   final void Function(String stageId, String? newName) onRenameStage;
   final ValueChanged<List<PipelineStageConfig>?> onPipelineStagesChanged;
+  final ValueChanged<ReminderScheduleConfig>? onReminderScheduleChanged;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -74,6 +77,7 @@ class _AppShellState extends State<AppShell> {
         languageCode: widget.languageCode,
         onLanguageChanged: widget.onLanguageChanged,
         onPipelineStagesChanged: widget.onPipelineStagesChanged,
+        onReminderScheduleChanged: widget.onReminderScheduleChanged,
       ),
     ];
 

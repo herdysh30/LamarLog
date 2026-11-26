@@ -7,10 +7,14 @@ import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:url_launcher/url_launcher.dart';
 
+import '../database/app_database.dart';
+import '../models/reminder_schedule_config.dart';
+
 enum ReminderStatus {
-  scheduledBoth,
-  scheduledOneHourOnly,
-  lessThanOneHour,
+  scheduledAll,
+  scheduledPartial,
+  tooClose,
+  disabled,
   permissionDenied,
   scheduleFailed,
 }
@@ -20,11 +24,23 @@ class ReminderScheduleResult {
     required this.status,
     this.notificationId24h,
     this.notificationId1h,
+    this.scheduledOffsetsMinutes = const [],
+    this.minLeadMinutes,
   });
 
   final ReminderStatus status;
+
+  /// Primary (earlier) scheduled notification ID.
   final int? notificationId24h;
+
+  /// Secondary (closer) scheduled notification ID.
   final int? notificationId1h;
+
+  /// Lead-time offsets (in minutes) actually scheduled.
+  final List<int> scheduledOffsetsMinutes;
+
+  /// Shortest enabled lead time when [status] is [ReminderStatus.tooClose].
+  final int? minLeadMinutes;
 }
 
 class NotificationService {
@@ -37,6 +53,9 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
   bool _initialized = false;
+
+  /// Active automatic reminder configuration synced from [PreferencesService].
+  ReminderScheduleConfig reminderSchedule = ReminderScheduleConfig.defaults;
 
   Future<void> init() async {
     if (_initialized) return;
@@ -146,9 +165,15 @@ class NotificationService {
     required String companyName,
     required String roundName,
     required DateTime scheduledAtUtc,
+    ReminderScheduleConfig? config,
     bool skipPermissionPrompt = false,
   }) async {
     try {
+      final activeConfig = (config ?? reminderSchedule).normalized();
+      if (activeConfig.isEmpty) {
+        return const ReminderScheduleResult(status: ReminderStatus.disabled);
+      }
+
       final hasPermission = skipPermissionPrompt
           ? await areNotificationsEnabled()
           : await requestPermission();
@@ -160,66 +185,81 @@ class NotificationService {
 
       final nowUtc = DateTime.now().toUtc();
       final diff = scheduledAtUtc.difference(nowUtc);
+      final pMin = activeConfig.primaryMinutes;
+      final sMin = activeConfig.secondaryMinutes;
 
-      if (diff < const Duration(hours: 1)) {
-        return const ReminderScheduleResult(
-          status: ReminderStatus.lessThanOneHour,
+      final canPrimary = pMin != null && diff >= Duration(minutes: pMin);
+      final canSecondary = sMin != null && diff >= Duration(minutes: sMin);
+
+      if (!canPrimary && !canSecondary) {
+        return ReminderScheduleResult(
+          status: ReminderStatus.tooClose,
+          minLeadMinutes: activeConfig.minActiveMinutes,
         );
       }
 
       final baseId = scheduleId.hashCode.abs() % 100000000;
-      final id1h = baseId * 10 + 1;
-      final id24h = baseId * 10 + 2;
+      final idSecondary = baseId * 10 + 1;
+      final idPrimary = baseId * 10 + 2;
 
       const details = NotificationDetails(
         android: AndroidNotificationDetails(
           'interview_reminders',
           'Interview Reminders',
           channelDescription:
-              '24h and 1h reminders before scheduled interviews',
+              'Customizable reminders before scheduled interviews',
           importance: Importance.high,
           priority: Priority.high,
         ),
         iOS: DarwinNotificationDetails(),
       );
 
-      final time1h = tz.TZDateTime.from(
-        scheduledAtUtc.subtract(const Duration(hours: 1)),
-        tz.UTC,
-      );
+      int? scheduledPrimaryId;
+      int? scheduledSecondaryId;
+      final scheduledOffsets = <int>[];
 
-      await _plugin.zonedSchedule(
-        id: id1h,
-        title: 'Interview in 1 hour: $companyName',
-        body: roundName,
-        scheduledDate: time1h,
-        notificationDetails: details,
-        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-      );
-
-      if (diff >= const Duration(hours: 24)) {
-        final time24h = tz.TZDateTime.from(
-          scheduledAtUtc.subtract(const Duration(hours: 24)),
+      if (canPrimary) {
+        final triggerTime = tz.TZDateTime.from(
+          scheduledAtUtc.subtract(Duration(minutes: pMin)),
           tz.UTC,
         );
         await _plugin.zonedSchedule(
-          id: id24h,
-          title: 'Interview tomorrow: $companyName',
+          id: idPrimary,
+          title: _notificationTitle(pMin, companyName),
           body: roundName,
-          scheduledDate: time24h,
+          scheduledDate: triggerTime,
           notificationDetails: details,
           androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
         );
-        return ReminderScheduleResult(
-          status: ReminderStatus.scheduledBoth,
-          notificationId24h: id24h,
-          notificationId1h: id1h,
-        );
+        scheduledPrimaryId = idPrimary;
+        scheduledOffsets.add(pMin);
       }
 
+      if (canSecondary) {
+        final triggerTime = tz.TZDateTime.from(
+          scheduledAtUtc.subtract(Duration(minutes: sMin)),
+          tz.UTC,
+        );
+        await _plugin.zonedSchedule(
+          id: idSecondary,
+          title: _notificationTitle(sMin, companyName),
+          body: roundName,
+          scheduledDate: triggerTime,
+          notificationDetails: details,
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        );
+        scheduledSecondaryId = idSecondary;
+        scheduledOffsets.add(sMin);
+      }
+
+      final expectedCount = activeConfig.activeOffsetsDesc.length;
       return ReminderScheduleResult(
-        status: ReminderStatus.scheduledOneHourOnly,
-        notificationId1h: id1h,
+        status: scheduledOffsets.length == expectedCount
+            ? ReminderStatus.scheduledAll
+            : ReminderStatus.scheduledPartial,
+        notificationId24h: scheduledPrimaryId,
+        notificationId1h: scheduledSecondaryId,
+        scheduledOffsetsMinutes: scheduledOffsets,
       );
     } catch (e) {
       debugPrint('[LamarLog NotificationScheduleError] $e');
@@ -227,6 +267,65 @@ class NotificationService {
         status: ReminderStatus.scheduleFailed,
       );
     }
+  }
+
+  /// Cancels existing alarms and reschedules all upcoming interviews using
+  /// [config] (or current [reminderSchedule]). Returns number of updated rows.
+  Future<int> rescheduleAllUpcoming(
+    AppDatabase db, {
+    ReminderScheduleConfig? config,
+  }) async {
+    final activeConfig = (config ?? reminderSchedule).normalized();
+    final nowUtc = DateTime.now().toUtc();
+    final all = await db.watchAllInterviewsWithApplications().first;
+    final upcoming = all
+        .where((e) => !e.schedule.scheduledAt.isBefore(nowUtc))
+        .toList();
+
+    int updated = 0;
+    for (final entry in upcoming) {
+      await cancelReminders(
+        entry.schedule.notificationId24h,
+        entry.schedule.notificationId1h,
+      );
+
+      if (activeConfig.isEmpty) {
+        if (entry.schedule.notificationId24h != null ||
+            entry.schedule.notificationId1h != null) {
+          await db.updateInterviewReminderIds(
+            id: entry.schedule.id,
+            notificationId24h: null,
+            notificationId1h: null,
+          );
+          updated++;
+        }
+        continue;
+      }
+
+      final res = await scheduleInterviewReminders(
+        scheduleId: entry.schedule.id,
+        companyName: entry.application.companyName,
+        roundName: entry.schedule.roundName,
+        scheduledAtUtc: entry.schedule.scheduledAt,
+        config: activeConfig,
+        skipPermissionPrompt: true,
+      );
+      await db.updateInterviewReminderIds(
+        id: entry.schedule.id,
+        notificationId24h: res.notificationId24h,
+        notificationId1h: res.notificationId1h,
+      );
+      if (res.notificationId24h != null || res.notificationId1h != null) {
+        updated++;
+      }
+    }
+    return updated;
+  }
+
+  String _notificationTitle(int minutes, String companyName) {
+    if (minutes == 1440) return 'Interview tomorrow: $companyName';
+    final lead = ReminderScheduleConfig.formatDuration(minutes, isId: false);
+    return 'Interview in $lead: $companyName';
   }
 
   Future<void> cancelReminders(int? id24h, int? id1h) async {

@@ -10,8 +10,10 @@ import 'app/theme/app_theme.dart';
 import 'core/database/app_database.dart';
 import 'core/l10n/app_strings.dart';
 import 'core/models/pipeline_stage_config.dart';
+import 'core/models/reminder_schedule_config.dart';
 import 'core/motion/app_motion.dart';
 import 'core/services/crash_report_service.dart';
+import 'core/services/notification_service.dart';
 import 'core/services/preferences_service.dart';
 import 'features/applications/presentation/bloc/applications_bloc.dart';
 import 'features/onboarding/presentation/pages/onboarding_page.dart';
@@ -113,6 +115,7 @@ class _LamarLogAppState extends State<LamarLogApp> {
   late String _languageCode;
   late bool _hasCompletedOnboarding;
   List<PipelineStageConfig>? _customPipelineStages;
+  late ReminderScheduleConfig _reminderSchedule;
 
   @override
   void initState() {
@@ -123,6 +126,8 @@ class _LamarLogAppState extends State<LamarLogApp> {
     _languageCode = widget.preferences.languageCode;
     _hasCompletedOnboarding = widget.preferences.hasCompletedOnboarding;
     _customPipelineStages = widget.preferences.pipelineStages;
+    _reminderSchedule = widget.preferences.reminderSchedule;
+    NotificationService.instance.reminderSchedule = _reminderSchedule;
   }
 
   void _updateThemeMode(ThemeMode mode) {
@@ -158,6 +163,13 @@ class _LamarLogAppState extends State<LamarLogApp> {
     widget.preferences.setPipelineStages(stages);
   }
 
+  void _updateReminderSchedule(ReminderScheduleConfig config) {
+    final normalized = config.normalized();
+    setState(() => _reminderSchedule = normalized);
+    NotificationService.instance.reminderSchedule = normalized;
+    widget.preferences.setReminderSchedule(normalized);
+  }
+
   void _renameStageById(String stageId, String? newName) {
     final current = List<PipelineStageConfig>.from(
       _customPipelineStages ??
@@ -191,6 +203,7 @@ class _LamarLogAppState extends State<LamarLogApp> {
           strings: AppStrings(
             _languageCode,
             customPipelineStages: _customPipelineStages,
+            reminderSchedule: _reminderSchedule,
           ),
           child: MaterialApp(
             title: 'LamarLog',
@@ -212,6 +225,7 @@ class _LamarLogAppState extends State<LamarLogApp> {
                     onLanguageChanged: _updateLanguage,
                     onRenameStage: _renameStageById,
                     onPipelineStagesChanged: _updatePipelineStages,
+                    onReminderScheduleChanged: _updateReminderSchedule,
                   )
                 : OnboardingPage(
                     languageCode: _languageCode,

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../app/theme/app_colors.dart';
 import '../enums/application_enums.dart';
 import '../models/pipeline_stage_config.dart';
+import '../models/reminder_schedule_config.dart';
 
 /// Inherited localization provider supporting English ('en') and Bahasa Indonesia ('id').
 class AppLocaleScope extends InheritedWidget {
@@ -22,6 +23,7 @@ class AppLocaleScope extends InheritedWidget {
   @override
   bool updateShouldNotify(AppLocaleScope oldWidget) =>
       strings.languageCode != oldWidget.strings.languageCode ||
+      strings.reminderSchedule != oldWidget.strings.reminderSchedule ||
       !_listEquals(strings.pipelineStages, oldWidget.strings.pipelineStages);
 
   static bool _listEquals(
@@ -40,10 +42,12 @@ class AppStrings {
   const AppStrings(
     this.languageCode, {
     this.customPipelineStages,
+    this.reminderSchedule = ReminderScheduleConfig.defaults,
   });
 
   final String languageCode;
   final List<PipelineStageConfig>? customPipelineStages;
+  final ReminderScheduleConfig reminderSchedule;
   bool get isId => languageCode == 'id';
 
   /// Active Kanban stages configured by the user (or the default 5 stages).
@@ -124,9 +128,17 @@ class AppStrings {
   String get noUpcomingInterviews => isId
       ? 'Belum ada pengingat interview mendatang'
       : 'No upcoming interview reminders';
-  String get noUpcomingSub => isId
-      ? 'Jadwalkan interview agar pengingat 24 jam & 1 jam sebelumnya otomatis aktif.'
-      : 'Schedule an interview to automatically trigger 24h & 1h local alerts.';
+  String get noUpcomingSub {
+    if (reminderSchedule.isEmpty) {
+      return isId
+          ? 'Jadwalkan interview di sini. Aktifkan pengingat otomatis di Pengaturan jika ingin alarm lokal.'
+          : 'Schedule interviews here. Enable automatic reminders in Settings for local alerts.';
+    }
+    final summary = reminderSchedule.formatSummary(isId: isId, short: true);
+    return isId
+        ? 'Jadwalkan interview agar pengingat $summary sebelumnya otomatis aktif.'
+        : 'Schedule an interview to automatically trigger $summary local alerts.';
+  }
   String get noPastInterviews =>
       isId ? 'Belum ada riwayat interview lewat.' : 'No past interviews yet.';
   String get scheduleInterview =>
@@ -170,6 +182,14 @@ class AppStrings {
       isId ? 'Gaji (Tertinggi)' : 'Salary (High to Low)';
   String get reset => 'Reset';
   String get applyFilters => isId ? 'Terapkan Filter' : 'Apply Filters';
+  String get filterByStage => isId ? 'Filter berdasarkan tahap' : 'Filter by stage';
+  String get allStages => isId ? 'Semua Tahap' : 'All Stages';
+  String get noFilterMatchTitle =>
+      isId ? 'Tidak ada lamaran yang cocok' : 'No matching applications';
+  String get noFilterMatchSubtitle => isId
+      ? 'Coba ubah tahap, kata kunci pencarian, atau filter lainnya.'
+      : 'Try another stage, search keyword, or filter.';
+  String get resetFilters => isId ? 'Reset Filter' : 'Reset Filters';
   String get terminalArchive => isId ? 'Arsip Hasil Akhir' : 'Terminal Archive';
   String acceptedCount(int n) => isId ? 'Diterima ($n)' : 'Accepted ($n)';
   String rejectedCount(int n) => isId ? 'Ditolak ($n)' : 'Rejected ($n)';
@@ -260,8 +280,8 @@ class AppStrings {
   String get onboard2Title =>
       isId ? 'Jangan Lewatkan Interview' : 'Never Miss an Interview';
   String get onboard2Body => isId
-      ? 'Atur pengingat otomatis 24 jam & 1 jam sebelum jadwal, simpan catatan timeline, dan lampirkan CV PDF spesifik.'
-      : 'Schedule automatic 24h & 1h reminders, log round-by-round notes, and attach tailored PDF resumes.';
+      ? 'Atur pengingat otomatis sebelum jadwal interview sesuai kebutuhanmu, simpan catatan timeline, dan lampirkan CV PDF spesifik.'
+      : 'Customize automatic reminders before interviews, log round-by-round notes, and attach tailored PDF resumes.';
   String get onboard3Title =>
       isId ? 'Analitik Akurat & Privat' : 'Private Insights, Full Control';
   String get onboard3Body => isId
@@ -291,14 +311,58 @@ class AppStrings {
   String get interviewSchedule =>
       isId ? 'Jadwal Interview' : 'Interview Schedule';
   String get schedule => isId ? 'Jadwalkan' : 'Schedule';
-  String get noInterviewsYet => isId
-      ? 'Belum ada jadwal interview. Tambahkan jadwal untuk mengaktifkan pengingat 24 jam & 1 jam sebelumnya.'
-      : 'No interviews scheduled yet. Add a session to activate 24h & 1h local reminders.';
-  String get remindersActiveBoth => isId
-      ? 'Pengingat aktif: 24 jam & 1 jam sebelum'
-      : 'Reminders active: 24h & 1h before';
-  String get reminderActive1h =>
-      isId ? 'Pengingat aktif: 1 jam sebelum' : 'Reminder active: 1h before';
+  String get noInterviewsYet {
+    if (reminderSchedule.isEmpty) {
+      return isId
+          ? 'Belum ada jadwal interview. Tambahkan jadwal untuk mencatat sesi interview.'
+          : 'No interviews scheduled yet. Add a session to track upcoming rounds.';
+    }
+    final summary = reminderSchedule.formatSummary(isId: isId, short: true);
+    return isId
+        ? 'Belum ada jadwal interview. Tambahkan jadwal untuk mengaktifkan pengingat $summary sebelumnya.'
+        : 'No interviews scheduled yet. Add a session to activate $summary local reminders.';
+  }
+
+  String reminderActiveSummary(List<int> offsetsMinutes) {
+    if (offsetsMinutes.isEmpty) return remindersInactive;
+    final formatted = offsetsMinutes
+        .map((m) => ReminderScheduleConfig.formatDuration(m, isId: isId, short: true))
+        .join(' & ');
+    return isId
+        ? 'Pengingat aktif: $formatted sebelum'
+        : 'Reminders active: $formatted before';
+  }
+
+  String reminderStatusLabel({
+    required bool hasPrimary,
+    required bool hasSecondary,
+  }) {
+    if (!hasPrimary && !hasSecondary) return remindersInactive;
+    final norm = reminderSchedule.normalized();
+    final offsets = <int>[];
+    if (hasPrimary) {
+      offsets.add(norm.primaryMinutes ?? norm.secondaryMinutes ?? 1440);
+    }
+    if (hasSecondary) {
+      offsets.add(norm.secondaryMinutes ?? norm.primaryMinutes ?? 60);
+    }
+    return reminderActiveSummary(offsets);
+  }
+
+  String reminderTooCloseMessage(int? minLeadMinutes) {
+    final lead = ReminderScheduleConfig.formatDuration(
+      minLeadMinutes ?? reminderSchedule.minActiveMinutes ?? 60,
+      isId: isId,
+    );
+    return isId
+        ? 'Jadwal kurang dari $lead lagi. Tidak ada alarm terjadwal.'
+        : 'Scheduled under $lead away. No alarm scheduled.';
+  }
+
+  String get remindersDisabledSaved => isId
+      ? 'Jadwal disimpan (pengingat otomatis sedang nonaktif).'
+      : 'Schedule saved (automatic reminders are off).';
+
   String get remindersInactive =>
       isId ? 'Pengingat tidak aktif' : 'Reminders inactive';
   String get copy => isId ? 'Salin' : 'Copy';
@@ -764,9 +828,17 @@ class AppStrings {
   String get notifStatusDisabled => isId ? 'Nonaktif' : 'Disabled';
   String get notifPermissionCardTitle =>
       isId ? 'Izin Notifikasi Perangkat' : 'Device Notification Permission';
-  String get notifPermissionEnabledDesc => isId
-      ? 'Pengingat otomatis H-24 jam & H-1 jam sebelum interview aktif.'
-      : 'Automatic 24h & 1h interview reminders are active.';
+  String get notifPermissionEnabledDesc {
+    if (reminderSchedule.isEmpty) {
+      return isId
+          ? 'Izin notifikasi aktif. Pengingat otomatis sedang nonaktif.'
+          : 'Notifications are allowed. Automatic reminders are turned off.';
+    }
+    final summary = reminderSchedule.formatSummary(isId: isId, short: true);
+    return isId
+        ? 'Pengingat otomatis $summary sebelum interview aktif.'
+        : 'Automatic $summary interview reminders are active.';
+  }
   String get notifPermissionDisabledDesc => isId
       ? 'Aktifkan izin notifikasi agar pengingat interview bisa muncul.'
       : 'Enable notifications so interview reminders can alert you.';
@@ -784,10 +856,39 @@ class AppStrings {
       isId ? 'Pengaturan Notifikasi Sistem' : 'System Notification Settings';
   String get reminderRulesTitle =>
       isId ? 'Jadwal Pengingat Otomatis' : 'Automatic Reminder Schedule';
-  String get reminderRule24h =>
-      isId ? '24 jam sebelum jadwal interview' : '24 hours before interview';
-  String get reminderRule1h =>
-      isId ? '1 jam sebelum jadwal interview' : '1 hour before interview';
+  String get reminderRulesSubtitle => isId
+      ? 'Atur kapan alarm otomatis berbunyi sebelum setiap jadwal interview.'
+      : 'Choose when automatic alerts fire before each scheduled interview.';
+  String get reminderFirstSlot => isId ? 'Pengingat Pertama' : 'First Reminder';
+  String get reminderSecondSlot => isId ? 'Pengingat Kedua' : 'Second Reminder';
+  String reminderBeforeInterview(int minutes) {
+    final dur = ReminderScheduleConfig.formatDuration(minutes, isId: isId);
+    return isId ? '$dur sebelum jadwal interview' : '$dur before interview';
+  }
+  String get reminderSlotOff => isId ? 'Nonaktif' : 'Off';
+  String get reminderCustomTime => isId ? 'Waktu Kustom' : 'Custom Time';
+  String get reminderPickOffsetTitle =>
+      isId ? 'Atur Waktu Pengingat' : 'Set Reminder Time';
+  String get reminderUnitMinutes => isId ? 'Menit' : 'Minutes';
+  String get reminderUnitHours => isId ? 'Jam' : 'Hours';
+  String get reminderUnitDays => isId ? 'Hari' : 'Days';
+  String get reminderRangeHint => isId
+      ? 'Rentang valid: 5 menit hingga 7 hari sebelum interview.'
+      : 'Valid range: 5 minutes to 7 days before interview.';
+  String get reminderResetDefault =>
+      isId ? 'Reset Default' : 'Reset Default';
+  String get reminderAutoPreviewPrefix =>
+      isId ? 'Pengingat otomatis' : 'Auto reminders';
+  String reminderScheduleUpdatedMsg(String summary, int rescheduled) {
+    if (rescheduled > 0) {
+      return isId
+          ? 'Pengingat diperbarui ($summary). $rescheduled jadwal mendatang disesuaikan.'
+          : 'Reminders updated ($summary). $rescheduled upcoming schedule(s) synced.';
+    }
+    return isId
+        ? 'Pengingat otomatis diperbarui ($summary).'
+        : 'Automatic reminders updated ($summary).';
+  }
   String get syncPendingReminders =>
       isId ? 'Sinkronkan Pengingat Tertunda' : 'Sync Inactive Reminders';
   String pendingRemindersCount(int n) => isId

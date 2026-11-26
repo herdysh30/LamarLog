@@ -6,6 +6,7 @@ import '../../../../core/database/app_database.dart';
 import '../../../../core/l10n/app_strings.dart';
 import '../../../../core/layout/responsive.dart';
 import '../../../../core/models/pipeline_stage_config.dart';
+import '../../../../core/models/reminder_schedule_config.dart';
 import '../../../../core/motion/app_motion.dart';
 import '../../../../core/services/notification_service.dart';
 import '../../../../core/widgets/applyflow_widgets.dart';
@@ -28,6 +29,7 @@ class SettingsPage extends StatefulWidget {
     required this.languageCode,
     required this.onLanguageChanged,
     required this.onPipelineStagesChanged,
+    this.onReminderScheduleChanged,
   });
 
   final ThemeMode themeMode;
@@ -39,6 +41,7 @@ class SettingsPage extends StatefulWidget {
   final String languageCode;
   final ValueChanged<String> onLanguageChanged;
   final ValueChanged<List<PipelineStageConfig>?> onPipelineStagesChanged;
+  final ValueChanged<ReminderScheduleConfig>? onReminderScheduleChanged;
 
   @override
   State<SettingsPage> createState() => _SettingsPageState();
@@ -202,9 +205,7 @@ class _SettingsPageState extends State<SettingsPage>
                     title: s.settingsNotificationsTitle,
                     subtitle: _notifEnabled == null
                         ? '...'
-                        : (notifOk
-                            ? s.notifStatusEnabled
-                            : s.notifStatusDisabled),
+                        : '${notifOk ? s.notifStatusEnabled : s.notifStatusDisabled} • ${s.reminderSchedule.formatSummary(isId: s.isId, short: true)}',
                     trailing: _notifEnabled == null
                         ? null
                         : Container(
@@ -220,7 +221,10 @@ class _SettingsPageState extends State<SettingsPage>
                       AppMotion.selectionHaptic();
                       await Navigator.of(context).push(
                         AppMotion.sharedAxisRoute<void>(
-                          const NotificationSettingsPage(),
+                          NotificationSettingsPage(
+                            onReminderScheduleChanged:
+                                widget.onReminderScheduleChanged,
+                          ),
                         ),
                       );
                       _checkNotificationStatus();

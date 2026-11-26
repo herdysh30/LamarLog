@@ -5,13 +5,20 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../core/database/app_database.dart';
 import '../../../../core/l10n/app_strings.dart';
 import '../../../../core/layout/responsive.dart';
+import '../../../../core/models/reminder_schedule_config.dart';
 import '../../../../core/motion/app_motion.dart';
 import '../../../../core/services/notification_service.dart';
 import '../../../../core/widgets/applyflow_widgets.dart';
 import '../../../../core/widgets/notification_permission_dialog.dart';
+import '../widgets/reminder_duration_sheet.dart';
 
 class NotificationSettingsPage extends StatefulWidget {
-  const NotificationSettingsPage({super.key});
+  const NotificationSettingsPage({
+    super.key,
+    this.onReminderScheduleChanged,
+  });
+
+  final ValueChanged<ReminderScheduleConfig>? onReminderScheduleChanged;
 
   @override
   State<NotificationSettingsPage> createState() =>
@@ -79,8 +86,6 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage>
           );
         }
       } else {
-        // Android suppresses the system dialog after prior denial — guide user
-        // directly to OS App Notification Settings so they are never stuck.
         final openedSettings = await showNotificationPermissionDialog(context);
         if (openedSettings) {
           _awaitingSettingsReturn = true;
@@ -97,14 +102,88 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage>
     await NotificationService.instance.openNotificationSettings();
   }
 
+  Future<void> _applyReminderSchedule(ReminderScheduleConfig next) async {
+    final db = context.read<AppDatabase>();
+    final s = AppLocaleScope.of(context);
+    final normalized = next.normalized();
+
+    NotificationService.instance.reminderSchedule = normalized;
+    widget.onReminderScheduleChanged?.call(normalized);
+
+    int rescheduled = 0;
+    try {
+      rescheduled = await NotificationService.instance.rescheduleAllUpcoming(
+        db,
+        config: normalized,
+      );
+    } catch (_) {}
+
+    if (mounted) {
+      final summary = normalized.formatSummary(isId: s.isId, short: true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(s.reminderScheduleUpdatedMsg(summary, rescheduled)),
+        ),
+      );
+    }
+  }
+
+  Future<void> _editSlot({
+    required ReminderScheduleConfig current,
+    required bool isPrimary,
+  }) async {
+    final currentMinutes =
+        isPrimary ? current.primaryMinutes : current.secondaryMinutes;
+    final otherMinutes =
+        isPrimary ? current.secondaryMinutes : current.primaryMinutes;
+    final fallbackMinutes = isPrimary ? 1440 : 60;
+
+    final picked = await showReminderDurationSheet(
+      context: context,
+      initialMinutes: currentMinutes ?? fallbackMinutes,
+      otherSlotMinutes: otherMinutes,
+    );
+    if (picked == null || !mounted) return;
+
+    final updated = isPrimary
+        ? current.copyWith(primaryMinutes: picked)
+        : current.copyWith(secondaryMinutes: picked);
+    await _applyReminderSchedule(updated);
+  }
+
+  Future<void> _toggleSlot({
+    required ReminderScheduleConfig current,
+    required bool isPrimary,
+    required bool enabled,
+  }) async {
+    AppMotion.selectionHaptic();
+    if (!enabled) {
+      final updated = isPrimary
+          ? current.copyWith(clearPrimary: true)
+          : current.copyWith(clearSecondary: true);
+      await _applyReminderSchedule(updated);
+      return;
+    }
+
+    final other = isPrimary ? current.secondaryMinutes : current.primaryMinutes;
+    int defaultMins = isPrimary ? 1440 : 60;
+    if (other == defaultMins) {
+      defaultMins = other == 60 ? 30 : 60;
+    }
+    final updated = isPrimary
+        ? current.copyWith(primaryMinutes: defaultMins)
+        : current.copyWith(secondaryMinutes: defaultMins);
+    await _applyReminderSchedule(updated);
+  }
+
   Future<void> _syncInactiveReminders({bool silentIfNone = false}) async {
     final db = context.read<AppDatabase>();
     final s = AppLocaleScope.of(context);
+    final config = s.reminderSchedule;
     final nowUtc = DateTime.now().toUtc();
     final all = await db.watchAllInterviewsWithApplications().first;
     final inactive = all.where((e) {
-      final diff = e.schedule.scheduledAt.difference(nowUtc);
-      return diff >= const Duration(hours: 1) &&
+      return config.isEligibleForReminder(e.schedule.scheduledAt, nowUtc) &&
           e.schedule.notificationId1h == null &&
           e.schedule.notificationId24h == null;
     }).toList();
@@ -131,6 +210,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage>
         companyName: entry.application.companyName,
         roundName: entry.schedule.roundName,
         scheduledAtUtc: entry.schedule.scheduledAt,
+        config: config,
         skipPermissionPrompt: true,
       );
       if (res.notificationId1h != null || res.notificationId24h != null) {
@@ -164,6 +244,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage>
     final isDark = theme.brightness == Brightness.dark;
     final s = AppLocaleScope.of(context);
     final enabled = _isEnabled ?? false;
+    final config = s.reminderSchedule.normalized();
 
     final statusColor = enabled
         ? (isDark ? const Color(0xFF34D399) : const Color(0xFF059669))
@@ -240,7 +321,9 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage>
                           borderRadius: BorderRadius.circular(999),
                         ),
                         child: Text(
-                          enabled ? s.notifStatusEnabled : s.notifStatusDisabled,
+                          enabled
+                              ? s.notifStatusEnabled
+                              : s.notifStatusDisabled,
                           style: theme.textTheme.labelSmall?.copyWith(
                             color: statusColor,
                             fontWeight: FontWeight.w700,
@@ -267,19 +350,17 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage>
             ),
             const SizedBox(height: 16),
 
-            // Pending Inactive Reminders Sync Banner (only shown if needed)
+            // Pending Inactive Reminders Sync Banner
             StreamBuilder<List<InterviewWithApplication>>(
               stream: db.watchAllInterviewsWithApplications(),
               builder: (context, snapshot) {
                 final nowUtc = DateTime.now().toUtc();
-                final inactive = (snapshot.data ?? const [])
-                    .where((e) {
-                      final diff = e.schedule.scheduledAt.difference(nowUtc);
-                      return diff >= const Duration(hours: 1) &&
-                          e.schedule.notificationId1h == null &&
-                          e.schedule.notificationId24h == null;
-                    })
-                    .toList();
+                final inactive = (snapshot.data ?? const []).where((e) {
+                  return config.isEligibleForReminder(
+                          e.schedule.scheduledAt, nowUtc) &&
+                      e.schedule.notificationId1h == null &&
+                      e.schedule.notificationId24h == null;
+                }).toList();
 
                 if (inactive.isEmpty) return const SizedBox.shrink();
 
@@ -318,22 +399,74 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage>
               },
             ),
 
-            // Automatic Schedule Info (concise, scannable)
+            // Customizable Automatic Reminder Schedule Card
             SurfaceCard(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(s.reminderRulesTitle, style: theme.textTheme.titleSmall),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          s.reminderRulesTitle,
+                          style: theme.textTheme.titleSmall,
+                        ),
+                      ),
+                      if (!config.isDefault)
+                        TextButton(
+                          style: TextButton.styleFrom(
+                            visualDensity: VisualDensity.compact,
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                          ),
+                          onPressed: () => _applyReminderSchedule(
+                            ReminderScheduleConfig.defaults,
+                          ),
+                          child: Text(s.reminderResetDefault),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    s.reminderRulesSubtitle,
+                    style: theme.textTheme.bodySmall,
+                  ),
                   const SizedBox(height: 12),
-                  _RuleRow(
+                  _ReminderSlotRow(
                     icon: Icons.schedule_rounded,
-                    label: s.reminderRule24h,
+                    title: s.reminderFirstSlot,
+                    subtitle: config.primaryMinutes != null
+                        ? s.reminderBeforeInterview(config.primaryMinutes!)
+                        : s.reminderSlotOff,
+                    enabled: config.primaryMinutes != null,
+                    onTapTime: () => _editSlot(
+                      current: config,
+                      isPrimary: true,
+                    ),
+                    onToggle: (v) => _toggleSlot(
+                      current: config,
+                      isPrimary: true,
+                      enabled: v,
+                    ),
                   ),
                   const SizedBox(height: 8),
-                  _RuleRow(
+                  _ReminderSlotRow(
                     icon: Icons.alarm_rounded,
-                    label: s.reminderRule1h,
+                    title: s.reminderSecondSlot,
+                    subtitle: config.secondaryMinutes != null
+                        ? s.reminderBeforeInterview(config.secondaryMinutes!)
+                        : s.reminderSlotOff,
+                    enabled: config.secondaryMinutes != null,
+                    onTapTime: () => _editSlot(
+                      current: config,
+                      isPrimary: false,
+                    ),
+                    onToggle: (v) => _toggleSlot(
+                      current: config,
+                      isPrimary: false,
+                      enabled: v,
+                    ),
                   ),
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 10),
@@ -377,29 +510,98 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage>
   }
 }
 
-class _RuleRow extends StatelessWidget {
-  const _RuleRow({required this.icon, required this.label});
+class _ReminderSlotRow extends StatelessWidget {
+  const _ReminderSlotRow({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.enabled,
+    required this.onTapTime,
+    required this.onToggle,
+  });
 
   final IconData icon;
-  final String label;
+  final String title;
+  final String subtitle;
+  final bool enabled;
+  final VoidCallback onTapTime;
+  final ValueChanged<bool> onToggle;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
 
-    return Row(
-      children: [
-        Icon(icon, size: 18, color: cs.primary),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            label,
-            style: theme.textTheme.bodyMedium
-                ?.copyWith(color: cs.onSurfaceVariant),
+    return Material(
+      color: cs.surfaceContainerLow,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTapTime,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: enabled ? cs.primaryFixed : cs.surfaceContainerHigh,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  icon,
+                  size: 18,
+                  color: enabled ? cs.onPrimaryFixed : cs.outline,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: enabled ? cs.onSurface : cs.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 1),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            subtitle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: enabled ? cs.primary : cs.outline,
+                              fontWeight:
+                                  enabled ? FontWeight.w600 : FontWeight.w400,
+                            ),
+                          ),
+                        ),
+                        if (enabled) ...[
+                          const SizedBox(width: 4),
+                          Icon(
+                            Icons.edit_outlined,
+                            size: 13,
+                            color: cs.primary,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Switch.adaptive(
+                value: enabled,
+                onChanged: onToggle,
+              ),
+            ],
           ),
         ),
-      ],
+      ),
     );
   }
 }

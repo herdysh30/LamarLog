@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../app/theme/app_colors.dart';
 import '../models/pipeline_stage_config.dart';
+import '../models/reminder_schedule_config.dart';
 
 class PreferencesService {
   PreferencesService(this._prefs) : _fallbackOnboardingDone = false;
@@ -19,6 +20,7 @@ class PreferencesService {
   static const _kOnboardingDone = 'lamarlog_onboarding_done';
   static const _kCustomStageNames = 'lamarlog_custom_stage_names';
   static const _kPipelineStages = 'lamarlog_pipeline_stages';
+  static const _kReminderSchedule = 'lamarlog_reminder_schedule';
 
   static Future<PreferencesService> create() async {
     final prefs = await SharedPreferences.getInstance();
@@ -118,5 +120,12 @@ class PreferencesService {
         PipelineStageConfig.encodeList(stages),
       );
     }
+  }
+
+  ReminderScheduleConfig get reminderSchedule =>
+      ReminderScheduleConfig.decode(_prefs?.getString(_kReminderSchedule));
+
+  Future<void> setReminderSchedule(ReminderScheduleConfig config) async {
+    await _prefs?.setString(_kReminderSchedule, config.normalized().encode());
   }
 }
