@@ -4,7 +4,8 @@
 
 ## Features
 
-- **Pipeline Kanban & List View:** Drag-and-drop Kanban board (`LongPressDraggable` / `DragTarget`) with customizable column names, plus a responsive list/grid view, search, filters (workplace type, priority), sorting, and a dedicated Terminal Archive for completed outcomes (`Offer Accepted`, `Offer Declined`, `Rejected`, `Withdrawn`, `No Response`).
+- **Customizable Kanban & List Pipeline:** Drag-and-drop Kanban board (`LongPressDraggable` / `DragTarget`) where you can add, rename, recolor, reorder, or remove active stages (1–12 stages), plus a responsive list/grid view, search (including application platform), filters, sorting, and a dedicated Terminal Archive for completed outcomes (`Offer Accepted`, `Offer Declined`, `Rejected`, `Withdrawn`, `No Response`).
+- **Offline Indonesia Region Autocomplete & Maps:** Bundled Kemendagri dataset covering all 38 provinces, 514 cities/regencies, and 7,285 districts (Kecamatan) + global remote hubs (~103 KB, 100% offline), with one-tap Google Maps navigation from the detail screen.
 - **Application Detail & Timeline:** Full status picker, quick metrics (expected/offered compensation, location, recruiter contact with direct actions), private PDF resume attachment (max 10 MB with built-in preview), and a chronological vertical timeline with manual notes.
 - **Interview Reminders:** Schedule local notifications with automatic 24-hour and 1-hour reminders (including smart fallback rules when scheduled <24h or <1h away) and a dedicated Reminders tab with countdown badges.
 - **Funnel Analytics:** Real-time conversion rates, active pipeline breakdown, stage velocity, and actionable insights calculated directly from immutable `StatusTransition` history records.

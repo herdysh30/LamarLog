@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../app/theme/app_colors.dart';
 import '../enums/application_enums.dart';
+import '../models/pipeline_stage_config.dart';
 
 /// Inherited localization provider supporting English ('en') and Bahasa Indonesia ('id').
 class AppLocaleScope extends InheritedWidget {
@@ -20,12 +22,15 @@ class AppLocaleScope extends InheritedWidget {
   @override
   bool updateShouldNotify(AppLocaleScope oldWidget) =>
       strings.languageCode != oldWidget.strings.languageCode ||
-      !_mapEquals(strings.customStageNames, oldWidget.strings.customStageNames);
+      !_listEquals(strings.pipelineStages, oldWidget.strings.pipelineStages);
 
-  static bool _mapEquals(Map<String, String> a, Map<String, String> b) {
+  static bool _listEquals(
+    List<PipelineStageConfig> a,
+    List<PipelineStageConfig> b,
+  ) {
     if (a.length != b.length) return false;
-    for (final entry in a.entries) {
-      if (b[entry.key] != entry.value) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
     }
     return true;
   }
@@ -34,12 +39,61 @@ class AppLocaleScope extends InheritedWidget {
 class AppStrings {
   const AppStrings(
     this.languageCode, {
-    this.customStageNames = const {},
+    this.customPipelineStages,
   });
 
   final String languageCode;
-  final Map<String, String> customStageNames;
+  final List<PipelineStageConfig>? customPipelineStages;
   bool get isId => languageCode == 'id';
+
+  /// Active Kanban stages configured by the user (or the default 5 stages).
+  List<PipelineStageConfig> get pipelineStages =>
+      customPipelineStages ?? PipelineStageConfig.defaults(isId: isId);
+
+  /// Stage label lookup map (`stageId -> label`) for exports/analytics.
+  Map<String, String> get stageLabelMap => {
+        for (final stage in pipelineStages) stage.id: stage.label,
+        for (final term in ApplicationStatus.terminalOutcomes)
+          term.name: defaultStatusLabel(term),
+      };
+
+  PipelineStageConfig? stageById(String statusId) {
+    for (final stage in pipelineStages) {
+      if (stage.id == statusId) return stage;
+    }
+    return null;
+  }
+
+  Color stageDotColorById(String statusId, Brightness brightness) {
+    final custom = stageById(statusId);
+    if (custom != null) return custom.colorKey.dotColor(brightness);
+    final builtIn = ApplicationStatus.values
+        .where((e) => e.name == statusId)
+        .firstOrNull;
+    if (builtIn != null) return AppColors.stageDotColor(builtIn, brightness);
+    return StageColorKey.violet.dotColor(brightness);
+  }
+
+  (Color bg, Color fg, Color dot) stageColorsById(
+    String statusId,
+    Brightness brightness,
+    ColorScheme cs,
+  ) {
+    final custom = stageById(statusId);
+    if (custom != null) {
+      final (bg, fg) = custom.colorKey.chipColors(brightness);
+      return (bg, fg, custom.colorKey.dotColor(brightness));
+    }
+    final builtIn = ApplicationStatus.values
+        .where((e) => e.name == statusId)
+        .firstOrNull;
+    if (builtIn != null) {
+      final (bg, fg) = AppColors.statusBadgeColors(builtIn, brightness, cs);
+      return (bg, fg, AppColors.stageDotColor(builtIn, brightness));
+    }
+    final (bg, fg) = StageColorKey.violet.chipColors(brightness);
+    return (bg, fg, StageColorKey.violet.dotColor(brightness));
+  }
 
   // Navigation
   String get navPipeline => 'Pipeline';
@@ -448,7 +502,49 @@ class AppStrings {
       ? 'Belum ada lamaran untuk diekspor.'
       : 'No applications to export yet.';
 
-  // Enum labels (checks custom Kanban column names first)
+  // Offline Indonesia regions autocomplete & Google Maps
+  String get locationAutocompleteHint => isId
+      ? 'Ketik kecamatan, kota, atau alamat kantor...'
+      : 'Type district, city, or office address...';
+  String get openInMaps => isId ? 'Buka di Maps' : 'Open in Maps';
+  String get districtTag => isId ? 'Kecamatan' : 'District';
+  String get cityTag => isId ? 'Kota/Kab' : 'City';
+  String get provinceTag => isId ? 'Provinsi' : 'Province';
+
+  // Customizable Pipeline Stages Manager
+  String get managePipelineStages =>
+      isId ? 'Kelola Tahapan Pipeline' : 'Manage Pipeline Stages';
+  String get managePipelineStagesSub => isId
+      ? 'Tambah, ubah nama/warna, atur urutan, atau hapus kolom Kanban'
+      : 'Add, rename, recolor, reorder, or delete Kanban columns';
+  String get addStage => isId ? 'Tambah Tahap' : 'Add Stage';
+  String get addStageTitle =>
+      isId ? 'Tambah Tahap Pipeline' : 'Add Pipeline Stage';
+  String get stageNameHint => isId
+      ? 'Contoh: Psikotes, Technical Test, HR Interview'
+      : 'e.g. Technical Test, HR Interview, Medical';
+  String get stageColorLabel => isId ? 'Warna Indikator' : 'Indicator Color';
+  String deleteStageTitle(String name) =>
+      isId ? 'Hapus tahap "$name"?' : 'Delete "$name" stage?';
+  String get deleteStageBody => isId
+      ? 'Tahap ini akan dihapus dari papan Kanban.'
+      : 'This stage will be removed from your Kanban board.';
+  String deleteStageReassignNote(int count, String fallbackName) => isId
+      ? 'Ada $count lamaran di tahap ini. Semuanya akan dipindahkan otomatis ke "$fallbackName" agar tidak hilang.'
+      : '$count applications are currently in this stage. They will be moved safely to "$fallbackName".';
+  String get cannotDeleteLastStage => isId
+      ? 'Minimal harus ada 1 tahap aktif di Pipeline.'
+      : 'At least 1 active pipeline stage is required.';
+  String stageCountBadge(int count) => isId
+      ? '$count tahap aktif (maks. 12)'
+      : '$count active stages (max 12)';
+  String get reorderOrEditHint => isId
+      ? 'Ketuk nama untuk mengubah, panah untuk mengatur urutan, atau tambah tahap baru.'
+      : 'Tap a stage to edit name/color, use arrows to reorder, or add new stages.';
+  String get moveUp => isId ? 'Naikkan' : 'Move Up';
+  String get moveDown => isId ? 'Turunkan' : 'Move Down';
+
+  // Enum & custom stage labels
   String defaultStatusLabel(ApplicationStatus status) {
     if (!isId) return status.label;
     return switch (status) {
@@ -465,11 +561,27 @@ class AppStrings {
     };
   }
 
-  String statusLabel(ApplicationStatus status) {
-    final custom = customStageNames[status.name]?.trim();
-    if (custom != null && custom.isNotEmpty) return custom;
-    return defaultStatusLabel(status);
+  String statusLabelById(String statusId) {
+    final configured = stageById(statusId);
+    if (configured != null) return configured.label;
+
+    final builtIn = ApplicationStatus.values
+        .where((e) => e.name == statusId)
+        .firstOrNull;
+    if (builtIn != null) return defaultStatusLabel(builtIn);
+
+    final cleaned = statusId
+        .replaceFirst(RegExp(r'^custom_'), '')
+        .replaceAll('_', ' ')
+        .trim();
+    if (cleaned.isEmpty) return statusId;
+    return cleaned
+        .split(' ')
+        .map((w) => w.isEmpty ? '' : '${w[0].toUpperCase()}${w.substring(1)}')
+        .join(' ');
   }
+
+  String statusLabel(ApplicationStatus status) => statusLabelById(status.name);
 
   String priorityLabel(PriorityLevel level, {bool compact = false}) {
     if (!isId) {

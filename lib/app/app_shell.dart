@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../core/database/app_database.dart';
-import '../core/enums/application_enums.dart';
 import '../core/l10n/app_strings.dart';
 import '../core/layout/responsive.dart';
+import '../core/models/pipeline_stage_config.dart';
 import '../features/analytics/presentation/pages/analytics_page.dart';
 import '../features/applications/presentation/pages/pipeline_page.dart';
 import '../features/reminders/presentation/pages/notifications_page.dart';
@@ -22,9 +22,8 @@ class AppShell extends StatefulWidget {
     required this.onDefaultCurrencyChanged,
     required this.languageCode,
     required this.onLanguageChanged,
-    required this.customStageNames,
     required this.onRenameStage,
-    required this.onCustomStageNamesChanged,
+    required this.onPipelineStagesChanged,
   });
 
   final ThemeMode themeMode;
@@ -35,9 +34,8 @@ class AppShell extends StatefulWidget {
   final ValueChanged<String> onDefaultCurrencyChanged;
   final String languageCode;
   final ValueChanged<String> onLanguageChanged;
-  final Map<String, String> customStageNames;
-  final void Function(ApplicationStatus stage, String? newName) onRenameStage;
-  final ValueChanged<Map<String, String>> onCustomStageNamesChanged;
+  final void Function(String stageId, String? newName) onRenameStage;
+  final ValueChanged<List<PipelineStageConfig>?> onPipelineStagesChanged;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -59,6 +57,7 @@ class _AppShellState extends State<AppShell> {
       PipelinePage(
         defaultCurrency: widget.defaultCurrency,
         onRenameStage: widget.onRenameStage,
+        onPipelineStagesChanged: widget.onPipelineStagesChanged,
       ),
       const NotificationsPage(),
       const AnalyticsPage(),
@@ -71,8 +70,7 @@ class _AppShellState extends State<AppShell> {
         onDefaultCurrencyChanged: widget.onDefaultCurrencyChanged,
         languageCode: widget.languageCode,
         onLanguageChanged: widget.onLanguageChanged,
-        customStageNames: widget.customStageNames,
-        onCustomStageNamesChanged: widget.onCustomStageNamesChanged,
+        onPipelineStagesChanged: widget.onPipelineStagesChanged,
       ),
     ];
 

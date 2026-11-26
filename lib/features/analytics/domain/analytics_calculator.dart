@@ -84,11 +84,21 @@ class AnalyticsCalculator {
           statusesReached.any((s) => s != ApplicationStatus.wishlist.name);
       if (everApplied) appliedAppIds.add(appId);
 
-      if (statusesReached.contains(ApplicationStatus.interview.name)) {
+      if (statusesReached.any(
+        (s) =>
+            s == ApplicationStatus.interview.name ||
+            s.contains('interview') ||
+            s.contains('wawancara'),
+      )) {
         interviewAppIds.add(appId);
       }
-      if (statusesReached.contains(ApplicationStatus.offering.name) ||
-          statusesReached.contains(ApplicationStatus.offerAccepted.name)) {
+      if (statusesReached.any(
+        (s) =>
+            s == ApplicationStatus.offering.name ||
+            s == ApplicationStatus.offerAccepted.name ||
+            s.contains('offer') ||
+            s.contains('tawaran'),
+      )) {
         offerAppIds.add(appId);
       }
 

@@ -85,6 +85,15 @@ class ContactLauncher {
     return digits;
   }
 
+  /// Builds a Google Maps search URI for an office address or city/district.
+  static Uri googleMapsUri(String location) {
+    return Uri.https(
+      'www.google.com',
+      '/maps/search/',
+      {'api': '1', 'query': location.trim()},
+    );
+  }
+
   static Future<bool> launch(Uri uri) async {
     try {
       return await launchUrl(uri, mode: LaunchMode.externalApplication);

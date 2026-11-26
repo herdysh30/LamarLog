@@ -52,14 +52,13 @@ class CsvExporter {
     buffer.writeln(headers.map(escapeCell).join(','));
 
     for (final app in applications) {
-      final statusEnum = ApplicationStatus.values.firstWhere(
-        (s) => s.name == app.currentStatus,
-        orElse: () => ApplicationStatus.wishlist,
-      );
-      final statusLabel = customStageNames[statusEnum.name]?.trim();
-      final resolvedStatus = (statusLabel != null && statusLabel.isNotEmpty)
-          ? statusLabel
-          : statusEnum.label;
+      final customLabel = customStageNames[app.currentStatus]?.trim();
+      final builtInStatus = ApplicationStatus.values
+          .where((s) => s.name == app.currentStatus)
+          .firstOrNull;
+      final resolvedStatus = (customLabel != null && customLabel.isNotEmpty)
+          ? customLabel
+          : (builtInStatus?.label ?? app.currentStatus);
 
       final priorityEnum = PriorityLevel.values.firstWhere(
         (p) => p.name == app.priority,

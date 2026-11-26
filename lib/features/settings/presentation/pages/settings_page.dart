@@ -11,12 +11,13 @@ import 'package:path_provider/path_provider.dart';
 
 import '../../../../app/theme/app_colors.dart';
 import '../../../../core/database/app_database.dart';
-import '../../../../core/enums/application_enums.dart';
 import '../../../../core/l10n/app_strings.dart';
 import '../../../../core/layout/responsive.dart';
+import '../../../../core/models/pipeline_stage_config.dart';
 import '../../../../core/utils/csv_exporter.dart';
 import '../../../../core/widgets/applyflow_widgets.dart';
 import '../../../applications/presentation/bloc/applications_bloc.dart';
+import '../widgets/pipeline_stages_sheet.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({
@@ -29,8 +30,7 @@ class SettingsPage extends StatefulWidget {
     required this.onDefaultCurrencyChanged,
     required this.languageCode,
     required this.onLanguageChanged,
-    required this.customStageNames,
-    required this.onCustomStageNamesChanged,
+    required this.onPipelineStagesChanged,
   });
 
   final ThemeMode themeMode;
@@ -41,8 +41,7 @@ class SettingsPage extends StatefulWidget {
   final ValueChanged<String> onDefaultCurrencyChanged;
   final String languageCode;
   final ValueChanged<String> onLanguageChanged;
-  final Map<String, String> customStageNames;
-  final ValueChanged<Map<String, String>> onCustomStageNamesChanged;
+  final ValueChanged<List<PipelineStageConfig>?> onPipelineStagesChanged;
 
   @override
   State<SettingsPage> createState() => _SettingsPageState();
@@ -371,9 +370,12 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 const SizedBox(height: 12),
 
-                // Customize Kanban Column Names
+                // Customize Pipeline Stages (Add / Rename / Color / Reorder / Delete)
                 InkWell(
-                  onTap: () => _showKanbanNamesSheet(context),
+                  onTap: () => showPipelineStagesManagerSheet(
+                    context,
+                    onSave: widget.onPipelineStagesChanged,
+                  ),
                   borderRadius: BorderRadius.circular(10),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 6),
@@ -384,9 +386,9 @@ class _SettingsPageState extends State<SettingsPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(s.kanbanColumnNames,
+                              Text(s.managePipelineStages,
                                   style: theme.textTheme.titleSmall),
-                              Text(s.kanbanColumnNamesSub,
+                              Text(s.managePipelineStagesSub,
                                   style: theme.textTheme.bodySmall),
                             ],
                           ),
@@ -402,11 +404,11 @@ class _SettingsPageState extends State<SettingsPage> {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.edit_outlined,
+                              Icon(Icons.view_kanban_outlined,
                                   size: 15, color: cs.primary),
-                              const SizedBox(width: 4),
+                              const SizedBox(width: 5),
                               Text(
-                                '${ApplicationStatus.activeStages.length}',
+                                '${s.pipelineStages.length}',
                                 style: theme.textTheme.labelMedium?.copyWith(
                                   color: cs.primary,
                                   fontWeight: FontWeight.w700,
@@ -663,7 +665,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   Icon(Icons.terminal_rounded,
                       size: 15, color: cs.onSurfaceVariant),
                   const SizedBox(width: 6),
-                  Text('ApplyFlow v1.0.0', style: theme.textTheme.labelSmall),
+                  Text('ApplyFlow v1.1.0', style: theme.textTheme.labelSmall),
                 ],
               ),
               const SizedBox(height: 2),
@@ -676,104 +678,6 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
         ],
       ),
-      ),
-    );
-  }
-
-  void _showKanbanNamesSheet(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    final brightness = theme.brightness;
-    final s = AppLocaleScope.of(context);
-
-    final controllers = {
-      for (final stage in ApplicationStatus.activeStages)
-        stage: TextEditingController(text: s.statusLabel(stage)),
-    };
-
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.fromLTRB(
-          16,
-          0,
-          16,
-          MediaQuery.of(ctx).viewInsets.bottom + 20,
-        ),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(s.kanbanColumnNames,
-                      style: theme.textTheme.headlineSmall),
-                  TextButton(
-                    onPressed: () {
-                      widget.onCustomStageNamesChanged(const {});
-                      Navigator.of(ctx).pop();
-                    },
-                    child: Text(s.resetAllNames),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              ...ApplicationStatus.activeStages.map((stage) {
-                final dot = AppColors.stageDotColor(stage, brightness);
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: TextField(
-                    controller: controllers[stage],
-                    textCapitalization: TextCapitalization.words,
-                    decoration: InputDecoration(
-                      labelText: s.defaultStatusLabel(stage),
-                      prefixIcon: Padding(
-                        padding: const EdgeInsets.all(15),
-                        child: Container(
-                          width: 10,
-                          height: 10,
-                          decoration: BoxDecoration(
-                            color: dot,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              }),
-              const SizedBox(height: 8),
-              SizedBox(
-                height: 48,
-                child: FilledButton(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: cs.primaryContainer,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  onPressed: () {
-                    final updated = <String, String>{};
-                    for (final stage in ApplicationStatus.activeStages) {
-                      final text = controllers[stage]!.text.trim();
-                      final def = s.defaultStatusLabel(stage);
-                      if (text.isNotEmpty && text != def) {
-                        updated[stage.name] = text;
-                      }
-                    }
-                    widget.onCustomStageNamesChanged(updated);
-                    Navigator.of(ctx).pop();
-                  },
-                  child: Text(s.save),
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -841,6 +745,7 @@ class _SettingsPageState extends State<SettingsPage> {
       'schemaVersion': 1,
       'exportedAt': DateTime.now().toUtc().toIso8601String(),
       'appVersion': '1.0.0',
+      'pipelineStages': s.pipelineStages.map((st) => st.toJson()).toList(),
       'applications': apps
           .map((a) => {
                 'id': a.id,
@@ -931,7 +836,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
     final csvString = CsvExporter.buildApplicationsCsv(
       apps,
-      customStageNames: widget.customStageNames,
+      customStageNames: s.stageLabelMap,
     );
     final bytes = Uint8List.fromList(utf8.encode(csvString));
     final dateTag = DateTime.now().toIso8601String().substring(0, 10);
@@ -1001,6 +906,15 @@ class _SettingsPageState extends State<SettingsPage> {
       }
 
       if (!context.mounted) return;
+      final restoredStagesRaw = decoded['pipelineStages'];
+      if (restoredStagesRaw is List<dynamic>) {
+        final restoredStages = PipelineStageConfig.decodeList(
+          jsonEncode(restoredStagesRaw),
+        );
+        if (restoredStages != null) {
+          widget.onPipelineStagesChanged(restoredStages);
+        }
+      }
       final db = context.read<AppDatabase>();
       await db.transaction(() async {
         await db.delete(db.jobApplications).go();

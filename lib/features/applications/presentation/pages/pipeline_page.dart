@@ -6,7 +6,9 @@ import '../../../../core/database/app_database.dart';
 import '../../../../core/enums/application_enums.dart';
 import '../../../../core/l10n/app_strings.dart';
 import '../../../../core/layout/responsive.dart';
+import '../../../../core/models/pipeline_stage_config.dart';
 import '../../../../core/widgets/applyflow_widgets.dart';
+import '../../../settings/presentation/widgets/pipeline_stages_sheet.dart';
 import '../bloc/applications_bloc.dart';
 import '../widgets/application_card.dart';
 import 'application_detail_page.dart';
@@ -17,10 +19,12 @@ class PipelinePage extends StatefulWidget {
     super.key,
     this.defaultCurrency = 'IDR',
     this.onRenameStage,
+    this.onPipelineStagesChanged,
   });
 
   final String defaultCurrency;
-  final void Function(ApplicationStatus stage, String? newName)? onRenameStage;
+  final void Function(String stageId, String? newName)? onRenameStage;
+  final ValueChanged<List<PipelineStageConfig>?>? onPipelineStagesChanged;
 
   @override
   State<PipelinePage> createState() => _PipelinePageState();
@@ -327,12 +331,20 @@ class _PipelinePageState extends State<PipelinePage> {
                                 nextInterviewByApp: nextInterviewByApp,
                                 onAddToStage: (stage) => _openForm(
                                   context,
-                                  initialStatus: stage,
+                                  initialStatusId: stage.id,
                                 ),
                                 onRenameStage: widget.onRenameStage == null
                                     ? null
                                     : (stage) =>
                                         _showRenameStageDialog(context, stage),
+                                onManageStages:
+                                    widget.onPipelineStagesChanged == null
+                                        ? null
+                                        : () => showPipelineStagesManagerSheet(
+                                              context,
+                                              onSave:
+                                                  widget.onPipelineStagesChanged!,
+                                            ),
                                 onOpenDetail: (app) =>
                                     _openDetail(context, app),
                               )
@@ -367,7 +379,7 @@ class _PipelinePageState extends State<PipelinePage> {
                                 Flexible(
                                   child: Text(
                                     s.activeSummary(
-                                      ApplicationStatus.activeStages.length,
+                                      s.pipelineStages.length,
                                       state.activeApplications.length,
                                     ),
                                     maxLines: 1,
@@ -422,11 +434,11 @@ class _PipelinePageState extends State<PipelinePage> {
     );
   }
 
-  void _openForm(BuildContext context, {ApplicationStatus? initialStatus}) {
+  void _openForm(BuildContext context, {String? initialStatusId}) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => ApplicationFormPage(
-          initialStatus: initialStatus,
+          initialStatusId: initialStatusId,
           defaultCurrency: widget.defaultCurrency,
         ),
       ),
@@ -441,9 +453,12 @@ class _PipelinePageState extends State<PipelinePage> {
     );
   }
 
-  void _showRenameStageDialog(BuildContext context, ApplicationStatus stage) {
+  void _showRenameStageDialog(
+    BuildContext context,
+    PipelineStageConfig stage,
+  ) {
     final s = AppLocaleScope.of(context);
-    final ctrl = TextEditingController(text: s.statusLabel(stage));
+    final ctrl = TextEditingController(text: stage.label);
 
     showDialog<void>(
       context: context,
@@ -455,18 +470,20 @@ class _PipelinePageState extends State<PipelinePage> {
           textCapitalization: TextCapitalization.words,
           decoration: InputDecoration(
             hintText: s.columnNameHint,
-            helperText:
-                '${s.resetDefault}: ${s.defaultStatusLabel(stage)}',
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () {
-              widget.onRenameStage?.call(stage, null);
-              Navigator.of(ctx).pop();
-            },
-            child: Text(s.resetDefault),
-          ),
+          if (widget.onPipelineStagesChanged != null)
+            TextButton(
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                showPipelineStagesManagerSheet(
+                  context,
+                  onSave: widget.onPipelineStagesChanged!,
+                );
+              },
+              child: Text(s.isId ? 'Kelola Semua' : 'Manage All'),
+            ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
             child: Text(s.cancel),
@@ -474,7 +491,9 @@ class _PipelinePageState extends State<PipelinePage> {
           FilledButton(
             onPressed: () {
               final value = ctrl.text.trim();
-              widget.onRenameStage?.call(stage, value.isEmpty ? null : value);
+              if (value.isNotEmpty) {
+                widget.onRenameStage?.call(stage.id, value);
+              }
               Navigator.of(ctx).pop();
             },
             child: Text(s.save),
@@ -938,41 +957,99 @@ class _KanbanBoard extends StatelessWidget {
     required this.onAddToStage,
     required this.onOpenDetail,
     this.onRenameStage,
+    this.onManageStages,
   });
 
   final ApplicationsState state;
   final Map<String, InterviewSchedule> nextInterviewByApp;
-  final ValueChanged<ApplicationStatus> onAddToStage;
+  final ValueChanged<PipelineStageConfig> onAddToStage;
   final ValueChanged<JobApplication> onOpenDetail;
-  final ValueChanged<ApplicationStatus>? onRenameStage;
+  final ValueChanged<PipelineStageConfig>? onRenameStage;
+  final VoidCallback? onManageStages;
 
   @override
   Widget build(BuildContext context) {
-    final stages = ApplicationStatus.activeStages;
-    final brightness = Theme.of(context).brightness;
     final s = AppLocaleScope.of(context);
+    final stages = s.pipelineStages;
+    final brightness = Theme.of(context).brightness;
 
     return LayoutBuilder(
       builder: (context, constraints) {
         final colWidth = Responsive.kanbanColumnWidth(constraints.maxWidth);
+        final extraManageCol = onManageStages != null ? 1 : 0;
 
         return ListView.separated(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-          itemCount: stages.length,
+          itemCount: stages.length + extraManageCol,
           separatorBuilder: (_, _) => const SizedBox(width: 14),
           itemBuilder: (context, index) {
+            if (index == stages.length) {
+              final cs = Theme.of(context).colorScheme;
+              final theme = Theme.of(context);
+              return SizedBox(
+                width: (colWidth * 0.72).clamp(180.0, 240.0),
+                child: Material(
+                  color: cs.surfaceContainerLow.withValues(alpha: 0.55),
+                  borderRadius: BorderRadius.circular(18),
+                  child: InkWell(
+                    onTap: onManageStages,
+                    borderRadius: BorderRadius.circular(18),
+                    child: Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                          color: cs.outlineVariant.withValues(alpha: 0.55),
+                        ),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: cs.primaryFixed,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.add_rounded,
+                              color: cs.onPrimaryFixed,
+                              size: 26,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            s.managePipelineStages,
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.titleSmall,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            s.stageCountBadge(stages.length),
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }
+
             final stage = stages[index];
-            final stageTitle = s.statusLabel(stage);
-            final apps = state.byStatus(stage);
-            final stageDot = AppColors.stageDotColor(stage, brightness);
+            final stageTitle = stage.label;
+            final apps = state.byStatusId(stage.id);
+            final stageDot = stage.colorKey.dotColor(brightness);
 
             return DragTarget<JobApplication>(
               onAcceptWithDetails: (details) {
                 context.read<ApplicationsBloc>().add(
                       MoveApplicationStatus(
                         application: details.data,
-                        newStatus: stage,
+                        newStatusId: stage.id,
                       ),
                     );
               },

@@ -8,6 +8,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../../core/database/app_database.dart';
 import '../../../../core/enums/application_enums.dart';
+import '../../../../core/models/pipeline_stage_config.dart';
 import '../../../../core/services/notification_service.dart';
 import '../../../../core/utils/stale_application_helper.dart';
 
@@ -84,7 +85,7 @@ class AddApplication extends ApplicationsEvent {
     required this.location,
     required this.workplaceType,
     required this.jobType,
-    required this.status,
+    required this.statusId,
     required this.priority,
     required this.currency,
     required this.salaryPeriod,
@@ -101,7 +102,7 @@ class AddApplication extends ApplicationsEvent {
   final String location;
   final WorkplaceType workplaceType;
   final JobType jobType;
-  final ApplicationStatus status;
+  final String statusId;
   final PriorityLevel priority;
   final String currency;
   final SalaryPeriod salaryPeriod;
@@ -119,7 +120,7 @@ class AddApplication extends ApplicationsEvent {
         location,
         workplaceType,
         jobType,
-        status,
+        statusId,
         priority,
         currency,
         salaryPeriod,
@@ -140,7 +141,7 @@ class UpdateApplication extends ApplicationsEvent {
     required this.location,
     required this.workplaceType,
     required this.jobType,
-    required this.status,
+    required this.statusId,
     required this.priority,
     required this.currency,
     required this.salaryPeriod,
@@ -158,7 +159,7 @@ class UpdateApplication extends ApplicationsEvent {
   final String location;
   final WorkplaceType workplaceType;
   final JobType jobType;
-  final ApplicationStatus status;
+  final String statusId;
   final PriorityLevel priority;
   final String currency;
   final SalaryPeriod salaryPeriod;
@@ -177,7 +178,7 @@ class UpdateApplication extends ApplicationsEvent {
         location,
         workplaceType,
         jobType,
-        status,
+        statusId,
         priority,
         currency,
         salaryPeriod,
@@ -193,14 +194,27 @@ class UpdateApplication extends ApplicationsEvent {
 class MoveApplicationStatus extends ApplicationsEvent {
   const MoveApplicationStatus({
     required this.application,
-    required this.newStatus,
+    required this.newStatusId,
   });
 
   final JobApplication application;
-  final ApplicationStatus newStatus;
+  final String newStatusId;
 
   @override
-  List<Object?> get props => [application.id, newStatus];
+  List<Object?> get props => [application.id, newStatusId];
+}
+
+class ReassignStageApplications extends ApplicationsEvent {
+  const ReassignStageApplications({
+    required this.fromStageId,
+    required this.toStageId,
+  });
+
+  final String fromStageId;
+  final String toStageId;
+
+  @override
+  List<Object?> get props => [fromStageId, toStageId];
 }
 
 class DeleteApplication extends ApplicationsEvent {
@@ -280,24 +294,23 @@ class ApplicationsState extends Equatable {
   }
 
   List<JobApplication> get activeApplications {
-    final activeNames =
-        ApplicationStatus.activeStages.map((e) => e.name).toSet();
     return filteredApplications
-        .where((app) => activeNames.contains(app.currentStatus))
+        .where((app) => !PipelineStageConfig.isTerminalStatusId(app.currentStatus))
         .toList();
   }
 
-  List<JobApplication> byStatus(ApplicationStatus status) {
+  List<JobApplication> byStatusId(String statusId) {
     return filteredApplications
-        .where((app) => app.currentStatus == status.name)
+        .where((app) => app.currentStatus == statusId)
         .toList();
   }
+
+  List<JobApplication> byStatus(ApplicationStatus status) =>
+      byStatusId(status.name);
 
   List<JobApplication> get terminalApplications {
-    final terminalNames =
-        ApplicationStatus.terminalOutcomes.map((e) => e.name).toSet();
     return filteredApplications
-        .where((app) => terminalNames.contains(app.currentStatus))
+        .where((app) => PipelineStageConfig.isTerminalStatusId(app.currentStatus))
         .toList();
   }
 
@@ -354,6 +367,7 @@ class ApplicationsBloc extends Bloc<ApplicationsEvent, ApplicationsState> {
     on<AddApplication>(_onAddApplication);
     on<UpdateApplication>(_onUpdateApplication);
     on<MoveApplicationStatus>(_onMoveApplicationStatus);
+    on<ReassignStageApplications>(_onReassignStageApplications);
     on<DeleteApplication>(_onDeleteApplication);
   }
 
@@ -427,7 +441,8 @@ class ApplicationsBloc extends Bloc<ApplicationsEvent, ApplicationsState> {
   ) async {
     final now = DateTime.now().toUtc();
     final appId = _uuid.v4();
-    final appliedAt = event.status == ApplicationStatus.wishlist ? null : now;
+    final appliedAt =
+        event.statusId == ApplicationStatus.wishlist.name ? null : now;
 
     await _db.insertApplicationWithTransition(
       JobApplicationsCompanion.insert(
@@ -437,7 +452,7 @@ class ApplicationsBloc extends Bloc<ApplicationsEvent, ApplicationsState> {
         location: Value(event.location),
         workplaceType: Value(event.workplaceType.name),
         jobType: Value(event.jobType.name),
-        currentStatus: Value(event.status.name),
+        currentStatus: Value(event.statusId),
         priority: Value(event.priority.name),
         currency: Value(event.currency),
         salaryPeriod: Value(event.salaryPeriod.name),
@@ -455,7 +470,7 @@ class ApplicationsBloc extends Bloc<ApplicationsEvent, ApplicationsState> {
         id: _uuid.v4(),
         applicationId: appId,
         fromStatus: const Value(null),
-        toStatus: event.status.name,
+        toStatus: event.statusId,
         transitionedAt: now,
       ),
     );
@@ -466,9 +481,9 @@ class ApplicationsBloc extends Bloc<ApplicationsEvent, ApplicationsState> {
     Emitter<ApplicationsState> emit,
   ) async {
     final now = DateTime.now().toUtc();
-    final statusChanged = event.existing.currentStatus != event.status.name;
+    final statusChanged = event.existing.currentStatus != event.statusId;
     final shouldSetAppliedAt = event.existing.appliedAt == null &&
-        event.status != ApplicationStatus.wishlist;
+        event.statusId != ApplicationStatus.wishlist.name;
 
     await _db.updateApplicationDetails(
       JobApplicationsCompanion(
@@ -478,7 +493,7 @@ class ApplicationsBloc extends Bloc<ApplicationsEvent, ApplicationsState> {
         location: Value(event.location),
         workplaceType: Value(event.workplaceType.name),
         jobType: Value(event.jobType.name),
-        currentStatus: Value(event.status.name),
+        currentStatus: Value(event.statusId),
         priority: Value(event.priority.name),
         currency: Value(event.currency),
         salaryPeriod: Value(event.salaryPeriod.name),
@@ -499,7 +514,7 @@ class ApplicationsBloc extends Bloc<ApplicationsEvent, ApplicationsState> {
               id: _uuid.v4(),
               applicationId: event.existing.id,
               fromStatus: Value(event.existing.currentStatus),
-              toStatus: event.status.name,
+              toStatus: event.statusId,
               transitionedAt: now,
             ),
           );
@@ -510,25 +525,54 @@ class ApplicationsBloc extends Bloc<ApplicationsEvent, ApplicationsState> {
     MoveApplicationStatus event,
     Emitter<ApplicationsState> emit,
   ) async {
-    if (event.application.currentStatus == event.newStatus.name) return;
+    if (event.application.currentStatus == event.newStatusId) return;
 
     final now = DateTime.now().toUtc();
     final shouldSetAppliedAt = event.application.appliedAt == null &&
-        event.newStatus != ApplicationStatus.wishlist;
+        event.newStatusId != ApplicationStatus.wishlist.name;
 
     await _db.updateApplicationStatus(
       applicationId: event.application.id,
       fromStatus: event.application.currentStatus,
-      toStatus: event.newStatus.name,
+      toStatus: event.newStatusId,
       appliedAt: shouldSetAppliedAt ? now : null,
       transition: StatusTransitionsCompanion.insert(
         id: _uuid.v4(),
         applicationId: event.application.id,
         fromStatus: Value(event.application.currentStatus),
-        toStatus: event.newStatus.name,
+        toStatus: event.newStatusId,
         transitionedAt: now,
       ),
     );
+  }
+
+  Future<void> _onReassignStageApplications(
+    ReassignStageApplications event,
+    Emitter<ApplicationsState> emit,
+  ) async {
+    if (event.fromStageId == event.toStageId) return;
+    final affected = state.applications
+        .where((a) => a.currentStatus == event.fromStageId)
+        .toList();
+    for (final app in affected) {
+      final now = DateTime.now().toUtc();
+      await _db.updateApplicationStatus(
+        applicationId: app.id,
+        fromStatus: app.currentStatus,
+        toStatus: event.toStageId,
+        appliedAt: app.appliedAt == null &&
+                event.toStageId != ApplicationStatus.wishlist.name
+            ? now
+            : null,
+        transition: StatusTransitionsCompanion.insert(
+          id: _uuid.v4(),
+          applicationId: app.id,
+          fromStatus: Value(app.currentStatus),
+          toStatus: event.toStageId,
+          transitionedAt: now,
+        ),
+      );
+    }
   }
 
   Future<void> _onDeleteApplication(

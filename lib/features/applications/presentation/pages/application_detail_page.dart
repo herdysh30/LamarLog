@@ -15,6 +15,7 @@ import '../../../../core/database/app_database.dart';
 import '../../../../core/enums/application_enums.dart';
 import '../../../../core/l10n/app_strings.dart';
 import '../../../../core/layout/responsive.dart';
+import '../../../../core/models/pipeline_stage_config.dart';
 import '../../../../core/services/notification_service.dart';
 import '../../../../core/utils/contact_launcher.dart';
 import '../../../../core/utils/stale_application_helper.dart';
@@ -54,10 +55,6 @@ class _ApplicationDetailPageState extends State<ApplicationDetailPage> {
                 .firstOrNull ??
             widget.application;
 
-        final currentStatus = ApplicationStatus.values.firstWhere(
-          (st) => st.name == app.currentStatus,
-          orElse: () => ApplicationStatus.wishlist,
-        );
         final priority = PriorityLevel.values.firstWhere(
           (p) => p.name == app.priority,
           orElse: () => PriorityLevel.medium,
@@ -73,9 +70,9 @@ class _ApplicationDetailPageState extends State<ApplicationDetailPage> {
 
         final (prioBg, prioFg, prioDot) =
             AppColors.priorityColors(priority, brightness);
-        final (statusBg, statusFg) =
-            AppColors.statusBadgeColors(currentStatus, brightness, cs);
-        final statusDot = AppColors.stageDotColor(currentStatus, brightness);
+        final (statusBg, statusFg, statusDot) =
+            s.stageColorsById(app.currentStatus, brightness, cs);
+        final currentStatusLabel = s.statusLabelById(app.currentStatus);
 
         final hasSalary =
             app.expectedSalary != null && app.expectedSalary! > 0;
@@ -229,30 +226,53 @@ class _ApplicationDetailPageState extends State<ApplicationDetailPage> {
                         ),
                         const SizedBox(width: 8),
                         Expanded(
-                          child: Container(
-                            padding: const EdgeInsets.all(11),
-                            decoration: BoxDecoration(
-                              color: cs.surfaceContainerLow,
+                          child: Material(
+                            color: cs.surfaceContainerLow,
+                            borderRadius: BorderRadius.circular(10),
+                            child: InkWell(
                               borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  s.location,
-                                  style: theme.textTheme.labelSmall
-                                      ?.copyWith(color: cs.secondary),
+                              onTap: app.location.trim().isEmpty
+                                  ? null
+                                  : () => _launchUriWithFeedback(
+                                        context,
+                                        ContactLauncher.googleMapsUri(
+                                            app.location),
+                                        s,
+                                      ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(11),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          s.location,
+                                          style: theme.textTheme.labelSmall
+                                              ?.copyWith(color: cs.secondary),
+                                        ),
+                                        if (app.location.trim().isNotEmpty)
+                                          Icon(
+                                            Icons.map_outlined,
+                                            size: 14,
+                                            color: cs.primary,
+                                          ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 3),
+                                    Text(
+                                      app.location.isEmpty
+                                          ? s.workplaceLabel(workplace)
+                                          : '${app.location} (${s.workplaceLabel(workplace)})',
+                                      style: theme.textTheme.titleSmall,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(height: 3),
-                                Text(
-                                  app.location.isEmpty
-                                      ? s.workplaceLabel(workplace)
-                                      : '${app.location} (${s.workplaceLabel(workplace)})',
-                                  style: theme.textTheme.titleSmall,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
+                              ),
                             ),
                           ),
                         ),
@@ -488,7 +508,7 @@ class _ApplicationDetailPageState extends State<ApplicationDetailPage> {
                       borderRadius: BorderRadius.circular(12),
                       child: InkWell(
                         onTap: () =>
-                            _showStatusPicker(context, app, currentStatus),
+                            _showStatusPicker(context, app, app.currentStatus),
                         borderRadius: BorderRadius.circular(12),
                         child: Container(
                           height: 48,
@@ -510,7 +530,7 @@ class _ApplicationDetailPageState extends State<ApplicationDetailPage> {
                                     const SizedBox(width: 10),
                                     Flexible(
                                       child: Text(
-                                        '${s.statusLabel(currentStatus)} (${currentStatus.isTerminal ? s.outcomeSuffix : s.stageSuffix})',
+                                        '$currentStatusLabel (${PipelineStageConfig.isTerminalStatusId(app.currentStatus) ? s.outcomeSuffix : s.stageSuffix})',
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         style:
@@ -623,7 +643,8 @@ class _ApplicationDetailPageState extends State<ApplicationDetailPage> {
                               context.read<ApplicationsBloc>().add(
                                     MoveApplicationStatus(
                                       application: app,
-                                      newStatus: ApplicationStatus.noResponse,
+                                      newStatusId:
+                                          ApplicationStatus.noResponse.name,
                                     ),
                                   );
                             },
@@ -990,11 +1011,7 @@ class _ApplicationDetailPageState extends State<ApplicationDetailPage> {
                                 ),
                               ),
                               ...(transSnap.data ?? []).map((t) {
-                                final toEnum = ApplicationStatus.values
-                                    .firstWhere((st) => st.name == t.toStatus,
-                                        orElse: () =>
-                                            ApplicationStatus.wishlist);
-                                final toLabel = s.statusLabel(toEnum);
+                                final toLabel = s.statusLabelById(t.toStatus);
                                 final title = t.fromStatus == null
                                     ? (s.isId
                                         ? 'Ditambahkan ke $toLabel'
@@ -1459,7 +1476,7 @@ class _ApplicationDetailPageState extends State<ApplicationDetailPage> {
   void _showStatusPicker(
     BuildContext context,
     JobApplication app,
-    ApplicationStatus current,
+    String currentStatusId,
   ) {
     final brightness = Theme.of(context).brightness;
     final cs = Theme.of(context).colorScheme;
@@ -1482,8 +1499,8 @@ class _ApplicationDetailPageState extends State<ApplicationDetailPage> {
               const SizedBox(height: 14),
               Text(s.activeStagesHeader, style: theme.textTheme.labelMedium),
               const SizedBox(height: 6),
-              ...ApplicationStatus.activeStages.map((status) {
-                final isSelected = status == current;
+              ...s.pipelineStages.map((stage) {
+                final isSelected = stage.id == currentStatusId;
                 return ListTile(
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
@@ -1492,12 +1509,11 @@ class _ApplicationDetailPageState extends State<ApplicationDetailPage> {
                     width: 10,
                     height: 10,
                     decoration: BoxDecoration(
-                      color: AppColors.stageDotColor(status, brightness),
+                      color: stage.colorKey.dotColor(brightness),
                       shape: BoxShape.circle,
                     ),
                   ),
-                  title: Text(s.statusLabel(status),
-                      style: theme.textTheme.titleSmall),
+                  title: Text(stage.label, style: theme.textTheme.titleSmall),
                   trailing: isSelected
                       ? Icon(Icons.check_circle_rounded, color: cs.primary)
                       : null,
@@ -1505,7 +1521,7 @@ class _ApplicationDetailPageState extends State<ApplicationDetailPage> {
                     context.read<ApplicationsBloc>().add(
                           MoveApplicationStatus(
                             application: app,
-                            newStatus: status,
+                            newStatusId: stage.id,
                           ),
                         );
                     Navigator.of(ctx).pop();
@@ -1517,7 +1533,7 @@ class _ApplicationDetailPageState extends State<ApplicationDetailPage> {
                   style: theme.textTheme.labelMedium),
               const SizedBox(height: 6),
               ...ApplicationStatus.terminalOutcomes.map((status) {
-                final isSelected = status == current;
+                final isSelected = status.name == currentStatusId;
                 return ListTile(
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
@@ -1530,7 +1546,7 @@ class _ApplicationDetailPageState extends State<ApplicationDetailPage> {
                       shape: BoxShape.circle,
                     ),
                   ),
-                  title: Text(s.statusLabel(status),
+                  title: Text(s.defaultStatusLabel(status),
                       style: theme.textTheme.titleSmall),
                   trailing: isSelected
                       ? Icon(Icons.check_circle_rounded, color: cs.primary)
@@ -1539,7 +1555,7 @@ class _ApplicationDetailPageState extends State<ApplicationDetailPage> {
                     context.read<ApplicationsBloc>().add(
                           MoveApplicationStatus(
                             application: app,
-                            newStatus: status,
+                            newStatusId: status.name,
                           ),
                         );
                     Navigator.of(ctx).pop();

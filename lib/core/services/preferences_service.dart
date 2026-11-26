@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../app/theme/app_colors.dart';
+import '../models/pipeline_stage_config.dart';
 
 class PreferencesService {
   PreferencesService(this._prefs) : _fallbackOnboardingDone = false;
@@ -17,6 +18,7 @@ class PreferencesService {
   static const _kLanguageCode = 'applyflow_language_code';
   static const _kOnboardingDone = 'applyflow_onboarding_done';
   static const _kCustomStageNames = 'applyflow_custom_stage_names';
+  static const _kPipelineStages = 'applyflow_pipeline_stages';
 
   static Future<PreferencesService> create() async {
     final prefs = await SharedPreferences.getInstance();
@@ -84,5 +86,37 @@ class PreferencesService {
 
   Future<void> setCustomStageNames(Map<String, String> names) async {
     await _prefs?.setString(_kCustomStageNames, jsonEncode(names));
+  }
+
+  /// Returns custom configured pipeline stages, seamlessly migrating any
+  /// legacy renamed stage labels if present, or `null` when using defaults.
+  List<PipelineStageConfig>? get pipelineStages {
+    final raw = _prefs?.getString(_kPipelineStages);
+    final decoded = PipelineStageConfig.decodeList(raw);
+    if (decoded != null) return decoded;
+
+    final legacyNames = customStageNames;
+    if (legacyNames.isEmpty) return null;
+
+    final defaults = PipelineStageConfig.defaults(isId: languageCode == 'id');
+    return defaults.map((stage) {
+      final renamed = legacyNames[stage.id]?.trim();
+      if (renamed != null && renamed.isNotEmpty) {
+        return stage.copyWith(label: renamed);
+      }
+      return stage;
+    }).toList();
+  }
+
+  Future<void> setPipelineStages(List<PipelineStageConfig>? stages) async {
+    if (stages == null || stages.isEmpty) {
+      await _prefs?.remove(_kPipelineStages);
+      await _prefs?.remove(_kCustomStageNames);
+    } else {
+      await _prefs?.setString(
+        _kPipelineStages,
+        PipelineStageConfig.encodeList(stages),
+      );
+    }
   }
 }

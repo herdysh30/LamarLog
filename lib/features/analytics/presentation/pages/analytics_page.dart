@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../app/theme/app_colors.dart';
 import '../../../../core/database/app_database.dart';
 import '../../../../core/enums/application_enums.dart';
 import '../../../../core/l10n/app_strings.dart';
@@ -197,14 +196,13 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    ...ApplicationStatus.activeStages.map((stage) {
-                      final count = metrics.stageCounts[stage.name] ?? 0;
+                    ...s.pipelineStages.map((stage) {
+                      final count = metrics.stageCounts[stage.id] ?? 0;
                       final ratio = metrics.totalTracked == 0
                           ? 0.0
                           : (count / metrics.totalTracked).clamp(0.0, 1.0);
                       final pct = (ratio * 100).toStringAsFixed(0);
-                      final barColor =
-                          AppColors.stageDotColor(stage, brightness);
+                      final barColor = stage.colorKey.dotColor(brightness);
 
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 14),
@@ -228,7 +226,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                                       const SizedBox(width: 8),
                                       Flexible(
                                         child: Text(
-                                          s.statusLabel(stage),
+                                          stage.label,
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                           style: theme.textTheme.bodyMedium

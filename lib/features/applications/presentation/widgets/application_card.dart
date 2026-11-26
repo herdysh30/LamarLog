@@ -41,10 +41,9 @@ class ApplicationCard extends StatelessWidget {
       (j) => j.name == application.jobType,
       orElse: () => JobType.fullTime,
     );
-    final status = ApplicationStatus.values.firstWhere(
-      (st) => st.name == application.currentStatus,
-      orElse: () => ApplicationStatus.wishlist,
-    );
+    final statusLabel = s.statusLabelById(application.currentStatus);
+    final statusDotColor =
+        s.stageDotColorById(application.currentStatus, brightness);
 
     final daysInStage =
         StaleApplicationHelper.daysSinceUpdate(application).clamp(0, 999);
@@ -248,14 +247,13 @@ class ApplicationCard extends StatelessWidget {
                               width: 7,
                               height: 7,
                               decoration: BoxDecoration(
-                                color:
-                                    AppColors.stageDotColor(status, brightness),
+                                color: statusDotColor,
                                 shape: BoxShape.circle,
                               ),
                             ),
                             const SizedBox(width: 5),
                             Text(
-                              s.statusLabel(status),
+                              statusLabel,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: theme.textTheme.labelSmall?.copyWith(

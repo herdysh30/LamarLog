@@ -5,8 +5,8 @@ import 'app/app_shell.dart';
 import 'app/theme/app_colors.dart';
 import 'app/theme/app_theme.dart';
 import 'core/database/app_database.dart';
-import 'core/enums/application_enums.dart';
 import 'core/l10n/app_strings.dart';
+import 'core/models/pipeline_stage_config.dart';
 import 'core/services/preferences_service.dart';
 import 'features/applications/presentation/bloc/applications_bloc.dart';
 import 'features/onboarding/presentation/pages/onboarding_page.dart';
@@ -38,7 +38,7 @@ class _ApplyFlowAppState extends State<ApplyFlowApp> {
   late String _defaultCurrency;
   late String _languageCode;
   late bool _hasCompletedOnboarding;
-  late Map<String, String> _customStageNames;
+  List<PipelineStageConfig>? _customPipelineStages;
 
   @override
   void initState() {
@@ -48,9 +48,7 @@ class _ApplyFlowAppState extends State<ApplyFlowApp> {
     _defaultCurrency = widget.preferences.defaultCurrency;
     _languageCode = widget.preferences.languageCode;
     _hasCompletedOnboarding = widget.preferences.hasCompletedOnboarding;
-    _customStageNames = Map<String, String>.from(
-      widget.preferences.customStageNames,
-    );
+    _customPipelineStages = widget.preferences.pipelineStages;
   }
 
   void _updateThemeMode(ThemeMode mode) {
@@ -78,21 +76,34 @@ class _ApplyFlowAppState extends State<ApplyFlowApp> {
     widget.preferences.setOnboardingCompleted(true);
   }
 
-  void _renameStage(ApplicationStatus stage, String? newName) {
-    final updated = Map<String, String>.from(_customStageNames);
-    if (newName == null || newName.trim().isEmpty) {
-      updated.remove(stage.name);
-    } else {
-      updated[stage.name] = newName.trim();
-    }
-    setState(() => _customStageNames = updated);
-    widget.preferences.setCustomStageNames(updated);
+  void _updatePipelineStages(List<PipelineStageConfig>? stages) {
+    setState(() {
+      _customPipelineStages =
+          stages == null ? null : List<PipelineStageConfig>.from(stages);
+    });
+    widget.preferences.setPipelineStages(stages);
   }
 
-  void _updateAllStageNames(Map<String, String> names) {
-    final updated = Map<String, String>.from(names);
-    setState(() => _customStageNames = updated);
-    widget.preferences.setCustomStageNames(updated);
+  void _renameStageById(String stageId, String? newName) {
+    final current = List<PipelineStageConfig>.from(
+      _customPipelineStages ??
+          PipelineStageConfig.defaults(isId: _languageCode == 'id'),
+    );
+    final idx = current.indexWhere((s) => s.id == stageId);
+    if (idx < 0) return;
+
+    final trimmed = newName?.trim() ?? '';
+    if (trimmed.isEmpty) {
+      final defMatch = PipelineStageConfig.defaults(isId: _languageCode == 'id')
+          .where((s) => s.id == stageId)
+          .firstOrNull;
+      if (defMatch != null) {
+        current[idx] = current[idx].copyWith(label: defMatch.label);
+      }
+    } else {
+      current[idx] = current[idx].copyWith(label: trimmed);
+    }
+    _updatePipelineStages(current);
   }
 
   @override
@@ -105,7 +116,7 @@ class _ApplyFlowAppState extends State<ApplyFlowApp> {
         child: AppLocaleScope(
           strings: AppStrings(
             _languageCode,
-            customStageNames: _customStageNames,
+            customPipelineStages: _customPipelineStages,
           ),
           child: MaterialApp(
             title: 'ApplyFlow',
@@ -123,9 +134,8 @@ class _ApplyFlowAppState extends State<ApplyFlowApp> {
                     onDefaultCurrencyChanged: _updateDefaultCurrency,
                     languageCode: _languageCode,
                     onLanguageChanged: _updateLanguage,
-                    customStageNames: _customStageNames,
-                    onRenameStage: _renameStage,
-                    onCustomStageNamesChanged: _updateAllStageNames,
+                    onRenameStage: _renameStageById,
+                    onPipelineStagesChanged: _updatePipelineStages,
                   )
                 : OnboardingPage(
                     languageCode: _languageCode,

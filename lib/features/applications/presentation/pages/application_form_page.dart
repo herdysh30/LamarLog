@@ -7,6 +7,7 @@ import '../../../../core/database/app_database.dart';
 import '../../../../core/enums/application_enums.dart';
 import '../../../../core/l10n/app_strings.dart';
 import '../../../../core/layout/responsive.dart';
+import '../../../../core/services/indonesia_regions_service.dart';
 import '../../../../core/widgets/applyflow_widgets.dart';
 import '../bloc/applications_bloc.dart';
 
@@ -14,12 +15,12 @@ class ApplicationFormPage extends StatefulWidget {
   const ApplicationFormPage({
     super.key,
     this.existingApplication,
-    this.initialStatus,
+    this.initialStatusId,
     this.defaultCurrency = 'IDR',
   });
 
   final JobApplication? existingApplication;
-  final ApplicationStatus? initialStatus;
+  final String? initialStatusId;
   final String defaultCurrency;
 
   bool get isEditing => existingApplication != null;
@@ -40,13 +41,17 @@ class _ApplicationFormPageState extends State<ApplicationFormPage> {
   late final TextEditingController _platformCtrl;
   late final TextEditingController _recruiterNameCtrl;
   late final TextEditingController _recruiterContactCtrl;
+  final FocusNode _locationFocus = FocusNode();
 
   late WorkplaceType _workplaceType;
   late JobType _jobType;
-  late ApplicationStatus _status;
+  late String _statusId;
   late PriorityLevel _priority;
   late String _currency;
   late SalaryPeriod _salaryPeriod;
+
+  List<RegionSuggestion> _regionSuggestions = const [];
+  bool _showRegionSuggestions = false;
 
   @override
   void initState() {
@@ -80,12 +85,9 @@ class _ApplicationFormPageState extends State<ApplicationFormPage> {
       (e) => e.name == app?.jobType,
       orElse: () => JobType.fullTime,
     );
-    _status = app != null
-        ? ApplicationStatus.values.firstWhere(
-            (e) => e.name == app.currentStatus,
-            orElse: () => ApplicationStatus.wishlist,
-          )
-        : (widget.initialStatus ?? ApplicationStatus.wishlist);
+    _statusId = app?.currentStatus ??
+        widget.initialStatusId ??
+        ApplicationStatus.wishlist.name;
     _priority = PriorityLevel.values.firstWhere(
       (e) => e.name == app?.priority,
       orElse: () => PriorityLevel.medium,
@@ -96,10 +98,39 @@ class _ApplicationFormPageState extends State<ApplicationFormPage> {
       orElse: () =>
           _currency == 'USD' ? SalaryPeriod.yearly : SalaryPeriod.monthly,
     );
+
+    _locationFocus.addListener(_onLocationFocusChanged);
+    // Warm up offline Indonesia regions dataset in the background
+    IndonesiaRegionsService.instance.ensureLoaded();
+  }
+
+  Future<void> _onLocationFocusChanged() async {
+    if (_locationFocus.hasFocus) {
+      await _updateRegionSuggestions(_locationCtrl.text);
+      if (mounted) setState(() => _showRegionSuggestions = true);
+    } else {
+      // Tiny delay so taps on suggestion items register cleanly
+      await Future<void>.delayed(const Duration(milliseconds: 140));
+      if (mounted && !_locationFocus.hasFocus) {
+        setState(() => _showRegionSuggestions = false);
+      }
+    }
+  }
+
+  Future<void> _updateRegionSuggestions(String query) async {
+    final matches = await IndonesiaRegionsService.instance.search(query, limit: 8);
+    if (mounted) {
+      setState(() {
+        _regionSuggestions = matches;
+        _showRegionSuggestions = _locationFocus.hasFocus && matches.isNotEmpty;
+      });
+    }
   }
 
   @override
   void dispose() {
+    _locationFocus.removeListener(_onLocationFocusChanged);
+    _locationFocus.dispose();
     _companyCtrl.dispose();
     _roleCtrl.dispose();
     _locationCtrl.dispose();
@@ -118,8 +149,13 @@ class _ApplicationFormPageState extends State<ApplicationFormPage> {
     final cs = theme.colorScheme;
     final brightness = theme.brightness;
     final s = AppLocaleScope.of(context);
-    final activeStages = ApplicationStatus.activeStages;
-    final stageIdx = activeStages.indexOf(_status);
+    final activeStages = s.pipelineStages;
+    if (!widget.isEditing &&
+        !activeStages.any((st) => st.id == _statusId) &&
+        activeStages.isNotEmpty) {
+      _statusId = activeStages.first.id;
+    }
+    final stageIdx = activeStages.indexWhere((st) => st.id == _statusId);
 
     return Scaffold(
       appBar: AppBar(
@@ -194,12 +230,122 @@ class _ApplicationFormPageState extends State<ApplicationFormPage> {
                   const SizedBox(height: 6),
                   TextFormField(
                     controller: _locationCtrl,
+                    focusNode: _locationFocus,
                     textCapitalization: TextCapitalization.words,
+                    onChanged: _updateRegionSuggestions,
                     decoration: InputDecoration(
-                      hintText: s.locationHint,
+                      hintText: s.locationAutocompleteHint,
                       prefixIcon: const Icon(Icons.pin_drop_outlined, size: 20),
+                      suffixIcon: _locationCtrl.text.isNotEmpty
+                          ? IconButton(
+                              tooltip: 'Clear',
+                              icon: const Icon(Icons.close_rounded, size: 18),
+                              onPressed: () {
+                                _locationCtrl.clear();
+                                _updateRegionSuggestions('');
+                              },
+                            )
+                          : null,
                     ),
                   ),
+                  if (_showRegionSuggestions &&
+                      _regionSuggestions.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Container(
+                      constraints: const BoxConstraints(maxHeight: 240),
+                      decoration: BoxDecoration(
+                        color: cs.surfaceContainerLowest,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: cs.outlineVariant.withValues(alpha: 0.6),
+                        ),
+                      ),
+                      child: ListView.separated(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        shrinkWrap: true,
+                        itemCount: _regionSuggestions.length,
+                        separatorBuilder: (_, _) => Divider(
+                          height: 1,
+                          color: cs.outlineVariant.withValues(alpha: 0.25),
+                        ),
+                        itemBuilder: (_, idx) {
+                          final item = _regionSuggestions[idx];
+                          final levelTag = switch (item.level) {
+                            RegionLevel.district => s.districtTag,
+                            RegionLevel.regency => s.cityTag,
+                            RegionLevel.province => s.provinceTag,
+                            RegionLevel.globalHub => 'Global',
+                          };
+                          return InkWell(
+                            onTap: () {
+                              _locationCtrl.text = item.displayLabel;
+                              _locationCtrl.selection =
+                                  TextSelection.collapsed(
+                                offset: _locationCtrl.text.length,
+                              );
+                              setState(() => _showRegionSuggestions = false);
+                              _locationFocus.unfocus();
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 9),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    item.level == RegionLevel.globalHub
+                                        ? Icons.public_rounded
+                                        : Icons.location_on_outlined,
+                                    size: 17,
+                                    color: cs.primary,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          item.primaryText,
+                                          style: theme.textTheme.titleSmall
+                                              ?.copyWith(fontSize: 13.5),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        if (item.secondaryText.isNotEmpty)
+                                          Text(
+                                            item.secondaryText,
+                                            style: theme.textTheme.bodySmall,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 7, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: cs.surfaceContainer,
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      levelTag,
+                                      style:
+                                          theme.textTheme.labelSmall?.copyWith(
+                                        fontSize: 10,
+                                        color: cs.secondary,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -308,7 +454,7 @@ class _ApplicationFormPageState extends State<ApplicationFormPage> {
                     scrollDirection: Axis.horizontal,
                     child: Row(
                       children: activeStages.map((stage) {
-                        final selected = _status == stage;
+                        final selected = _statusId == stage.id;
                         return Padding(
                           padding: const EdgeInsets.only(right: 8),
                           child: Material(
@@ -317,7 +463,7 @@ class _ApplicationFormPageState extends State<ApplicationFormPage> {
                                 : cs.surfaceContainer,
                             borderRadius: BorderRadius.circular(999),
                             child: InkWell(
-                              onTap: () => setState(() => _status = stage),
+                              onTap: () => setState(() => _statusId = stage.id),
                               borderRadius: BorderRadius.circular(999),
                               child: Container(
                                 constraints:
@@ -333,14 +479,14 @@ class _ApplicationFormPageState extends State<ApplicationFormPage> {
                                       decoration: BoxDecoration(
                                         color: selected
                                             ? AppColors.tertiaryFixedLight
-                                            : AppColors.stageDotColor(
-                                                stage, brightness),
+                                            : stage.colorKey
+                                                .dotColor(brightness),
                                         shape: BoxShape.circle,
                                       ),
                                     ),
                                     const SizedBox(width: 8),
                                     Text(
-                                      s.statusLabel(stage),
+                                      stage.label,
                                       style:
                                           theme.textTheme.labelMedium?.copyWith(
                                         color: selected
@@ -571,9 +717,10 @@ class _ApplicationFormPageState extends State<ApplicationFormPage> {
                       ),
                     ],
                   ),
-                  if (_status == ApplicationStatus.offering ||
-                      _status == ApplicationStatus.offerAccepted ||
-                      _status == ApplicationStatus.offerDeclined ||
+                  if (_statusId == ApplicationStatus.offering.name ||
+                      _statusId == ApplicationStatus.offerAccepted.name ||
+                      _statusId == ApplicationStatus.offerDeclined.name ||
+                      _statusId.contains('offer') ||
                       widget.isEditing ||
                       _offeredSalaryCtrl.text.isNotEmpty) ...[
                     const SizedBox(height: 14),
@@ -784,7 +931,7 @@ class _ApplicationFormPageState extends State<ApplicationFormPage> {
               location: _locationCtrl.text.trim(),
               workplaceType: _workplaceType,
               jobType: _jobType,
-              status: _status,
+              statusId: _statusId,
               priority: _priority,
               currency: _currency,
               salaryPeriod: _salaryPeriod,
@@ -804,7 +951,7 @@ class _ApplicationFormPageState extends State<ApplicationFormPage> {
               location: _locationCtrl.text.trim(),
               workplaceType: _workplaceType,
               jobType: _jobType,
-              status: _status,
+              statusId: _statusId,
               priority: _priority,
               currency: _currency,
               salaryPeriod: _salaryPeriod,
