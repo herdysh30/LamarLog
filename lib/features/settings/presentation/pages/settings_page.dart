@@ -665,7 +665,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   Icon(Icons.terminal_rounded,
                       size: 15, color: cs.onSurfaceVariant),
                   const SizedBox(width: 6),
-                  Text('ApplyFlow v1.1.0', style: theme.textTheme.labelSmall),
+                  Text('ApplyFlow v1.0.0', style: theme.textTheme.labelSmall),
                 ],
               ),
               const SizedBox(height: 2),
