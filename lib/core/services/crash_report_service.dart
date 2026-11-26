@@ -134,9 +134,9 @@ class CrashReportService {
   static String sanitizeText(String raw, {int maxLength = 800}) {
     var cleaned = raw.trim();
     // Redact Windows / macOS / Linux home directory usernames
-    cleaned = cleaned.replaceAll(
+    cleaned = cleaned.replaceAllMapped(
       RegExp(r'([A-Za-z]:\\Users\\|/Users/|/home/)[^\\/\s]+'),
-      r'$1<redacted>',
+      (m) => '${m.group(1)}<redacted>',
     );
     // Redact Android app private document file paths (e.g., resume PDF filenames)
     cleaned = cleaned.replaceAll(
