@@ -11,6 +11,7 @@ import 'core/database/app_database.dart';
 import 'core/l10n/app_strings.dart';
 import 'core/models/pipeline_stage_config.dart';
 import 'core/motion/app_motion.dart';
+import 'core/services/crash_report_service.dart';
 import 'core/services/preferences_service.dart';
 import 'features/applications/presentation/bloc/applications_bloc.dart';
 import 'features/onboarding/presentation/pages/onboarding_page.dart';
@@ -21,10 +22,20 @@ Future<void> main() async {
   // Global error boundaries so uncaught framework/async errors never crash silently
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.presentError(details);
+    CrashReportService.instance.recordError(
+      details.exception,
+      details.stack,
+      source: 'flutter_framework',
+    );
     debugPrint('[ApplyFlow FlutterError] ${details.exceptionAsString()}');
   };
 
   PlatformDispatcher.instance.onError = (Object error, StackTrace stack) {
+    CrashReportService.instance.recordError(
+      error,
+      stack,
+      source: 'platform_dispatcher',
+    );
     debugPrint('[ApplyFlow UncaughtError] $error\n$stack');
     return true;
   };

@@ -634,6 +634,51 @@ class AppStrings {
   String get aboutBuiltWith =>
       isId ? 'Dibangun dengan Flutter & Drift' : 'Built with Flutter & Drift';
 
+  // Crash & Bug Reporting
+  String get sendReportBtn => isId ? 'Laporkan' : 'Send Report';
+  String get sendReportTitle =>
+      isId ? 'Laporkan Bug / Crash' : 'Send Bug / Crash Report';
+  String get sendReportSub => isId
+      ? 'Otomatis tercatat sebagai GitHub Issue tanpa perlu akun GitHub'
+      : 'Automatically creates a GitHub Issue without needing a GitHub account';
+  String get reportPrivacyNote => isId
+      ? 'Hanya mengirim versi app, OS, pesan error, dan stack trace ringkas. Data lamaran, gaji, kontak, dan CV PDF tidak pernah dikirim.'
+      : 'Only sends app version, OS, error message, and trimmed stack trace. Applications, salaries, contacts, and PDF resumes are never included.';
+  String get reportNoteLabel => isId
+      ? 'Apa yang sedang kamu lakukan? (Opsional)'
+      : 'What were you doing? (Optional)';
+  String get reportNoteHint => isId
+      ? 'Contoh: Saat menekan tombol simpan jadwal interview...'
+      : 'e.g. Right after tapping save on the interview dialog...';
+  String get reportPreviewToggle =>
+      isId ? 'Lihat pratinjau data yang dikirim' : 'Preview diagnostic data';
+  String get sendReportAutoBtn =>
+      isId ? 'Kirim Laporan Otomatis' : 'Send Report Automatically';
+  String get reportSending => isId ? 'Mengirim...' : 'Sending...';
+  String reportSentSuccess(String issueTag) => isId
+      ? 'Laporan berhasil dikirim$issueTag! Terima kasih.'
+      : 'Report sent successfully$issueTag! Thank you.';
+  String get reportEndpointNotConfigured => isId
+      ? 'Server proxy laporan belum dipasang. Gunakan tombol GitHub atau Salin di bawah.'
+      : 'Report proxy endpoint is not configured yet. Use GitHub or Copy below.';
+  String get reportNetworkFailed => isId
+      ? 'Gagal terhubung ke internet. Kamu bisa Salin laporan lalu kirim saat online.'
+      : 'Could not reach the server. You can copy the report and send it later.';
+  String get reportRateLimited => isId
+      ? 'Terlalu banyak laporan dalam waktu singkat. Coba lagi beberapa menit lagi.'
+      : 'Too many reports sent recently. Please try again in a few minutes.';
+  String get reportServerFailed => isId
+      ? 'Server gagal membuat Issue. Gunakan tombol GitHub atau Salin di bawah.'
+      : 'Server failed to create the issue. Please use GitHub or Copy below.';
+  String get reportCopied => isId
+      ? 'Laporan error disalin ke clipboard.'
+      : 'Diagnostic report copied to clipboard.';
+  String get aboutReportBug =>
+      isId ? 'Laporkan Bug / Masalah' : 'Report a Bug / Issue';
+  String get aboutReportBugSub => isId
+      ? 'Kirim laporan error otomatis ke repositori tanpa akun GitHub'
+      : 'Submit an anonymous bug report directly to GitHub Issues';
+
   // Enum & custom stage labels
   String defaultStatusLabel(ApplicationStatus status) {
     if (!isId) return status.label;

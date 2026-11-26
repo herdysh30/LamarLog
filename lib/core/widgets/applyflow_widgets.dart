@@ -3,6 +3,8 @@ import 'package:intl/intl.dart';
 
 import '../database/app_database.dart';
 import '../enums/application_enums.dart';
+import '../l10n/app_strings.dart';
+import 'send_report_dialog.dart';
 
 /// Shared ApplyFlow brand top bar used across primary tabs.
 /// Clean by default (no redundant offline badge unless explicitly provided, e.g. in Settings).
@@ -296,7 +298,7 @@ String salaryPeriodSuffix(JobApplication app, {bool isId = false}) {
   return isId ? '/bln' : '/mo';
 }
 
-/// Reusable centered error state with optional retry action.
+/// Reusable centered error state with optional retry and bug report actions.
 class ErrorStateCard extends StatelessWidget {
   const ErrorStateCard({
     super.key,
@@ -305,6 +307,7 @@ class ErrorStateCard extends StatelessWidget {
     this.retryLabel,
     this.onRetry,
     this.compact = false,
+    this.showReportButton = true,
   });
 
   final String title;
@@ -312,11 +315,13 @@ class ErrorStateCard extends StatelessWidget {
   final String? retryLabel;
   final VoidCallback? onRetry;
   final bool compact;
+  final bool showReportButton;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
+    final s = AppLocaleScope.of(context);
 
     if (compact) {
       return Container(
@@ -338,7 +343,7 @@ class ErrorStateCard extends StatelessWidget {
             if (onRetry != null)
               TextButton(
                 onPressed: onRetry,
-                child: Text(retryLabel ?? 'Retry'),
+                child: Text(retryLabel ?? s.retry),
               ),
           ],
         ),
@@ -377,12 +382,29 @@ class ErrorStateCard extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ],
-            if (onRetry != null) ...[
+            if (onRetry != null || showReportButton) ...[
               const SizedBox(height: 16),
-              FilledButton.icon(
-                onPressed: onRetry,
-                icon: const Icon(Icons.refresh_rounded, size: 18),
-                label: Text(retryLabel ?? 'Retry'),
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 10,
+                runSpacing: 8,
+                children: [
+                  if (onRetry != null)
+                    FilledButton.icon(
+                      onPressed: onRetry,
+                      icon: const Icon(Icons.refresh_rounded, size: 18),
+                      label: Text(retryLabel ?? s.retry),
+                    ),
+                  if (showReportButton)
+                    OutlinedButton.icon(
+                      onPressed: () => showSendReportDialog(
+                        context,
+                        errorMessage: detail ?? title,
+                      ),
+                      icon: const Icon(Icons.bug_report_outlined, size: 18),
+                      label: Text(s.sendReportBtn),
+                    ),
+                ],
               ),
             ],
           ],

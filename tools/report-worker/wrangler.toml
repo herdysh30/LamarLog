@@ -1,0 +1,10 @@
+name = "applyflow-report-worker"
+main = "src/index.js"
+compatibility_date = "2026-01-01"
+
+[vars]
+GITHUB_OWNER = "herdysh30"
+GITHUB_REPO = "ApplyFlow"
+
+# Set GITHUB_TOKEN securely as a Cloudflare secret (NEVER commit it here!):
+#   npx wrangler secret put GITHUB_TOKEN

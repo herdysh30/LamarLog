@@ -5,11 +5,12 @@ import '../../../../core/layout/responsive.dart';
 import '../../../../core/motion/app_motion.dart';
 import '../../../../core/utils/contact_launcher.dart';
 import '../../../../core/widgets/applyflow_widgets.dart';
+import '../../../../core/widgets/send_report_dialog.dart';
 
 class AboutPage extends StatelessWidget {
   const AboutPage({super.key});
 
-  static const String appVersion = '1.0.0';
+  static const String appVersion = '1.1.0';
   static final Uri _repoUri =
       Uri.parse('https://github.com/herdysh30/ApplyFlow');
   static final Uri _releasesUri =
@@ -176,6 +177,17 @@ class AboutPage extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
               child: Column(
                 children: [
+                  _AboutLinkTile(
+                    icon: Icons.bug_report_outlined,
+                    title: s.aboutReportBug,
+                    subtitle: s.aboutReportBugSub,
+                    trailingIcon: Icons.chevron_right_rounded,
+                    onTap: () {
+                      AppMotion.selectionHaptic();
+                      showSendReportDialog(context);
+                    },
+                  ),
+                  const Divider(indent: 14, endIndent: 14),
                   _AboutLinkTile(
                     icon: Icons.code_rounded,
                     title: s.aboutGithubRepo,

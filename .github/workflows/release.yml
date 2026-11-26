@@ -40,10 +40,10 @@ jobs:
         run: flutter test
 
       - name: Build Universal Release APK
-        run: flutter build apk --release
+        run: flutter build apk --release --dart-define=REPORT_ENDPOINT=${{ secrets.REPORT_ENDPOINT }}
 
       - name: Build Split-per-ABI Release APKs
-        run: flutter build apk --release --split-per-abi
+        run: flutter build apk --release --split-per-abi --dart-define=REPORT_ENDPOINT=${{ secrets.REPORT_ENDPOINT }}
 
       - name: Prepare release artifacts
         run: |
@@ -60,21 +60,13 @@ jobs:
           body: |
             ## ApplyFlow ${{ github.ref_name }}
 
-            Offline-first job application tracker built with Flutter.
-
-            ### Highlights
-            - **Kanban & List Pipeline:** Drag-and-drop Kanban board with customizable column names, responsive list/grid view, search (including job platform), filters, sorting, and Terminal Archive.
-            - **Application Platform Tracking:** Record where you applied (LinkedIn, Glints, JobStreet, Kalibrr, Dealls, Company Site, Referral, Email, or custom).
-            - **Direct Recruiter & Link Actions:** One-tap open job links, send email (`mailto:`), call, or chat via WhatsApp.
-            - **Stale Follow-up Alerts:** Automatic follow-up badge & quick actions for applications awaiting reply for ≥14 days.
-            - **Private PDF Resumes & Interview Reminders:** On-device PDF preview (max 10 MB) and 24h/1h local notifications with smart fallbacks.
-            - **Funnel Analytics:** Conversion rates and stage velocity computed from immutable `StatusTransition` history.
-            - **Data Vault:** Offline local storage, full JSON backup/restore, and CSV spreadsheet export.
-            - **Personalization:** Light & Dark mode, 5 color palettes, English & Bahasa Indonesia, IDR/USD currency, and adaptive phone/tablet layouts.
-
             ### Downloads
             - **`ApplyFlow-${{ github.ref_name }}-arm64-v8a.apk`** — Recommended for most modern Android phones (smaller size).
-            - **`ApplyFlow-${{ github.ref_name }}-universal.apk`** — Works on all Android architectures.
+            - **`ApplyFlow-${{ github.ref_name }}-universal.apk`** — Compatible with all Android architectures.
+
+            See [CHANGELOG.md](https://github.com/herdysh30/ApplyFlow/blob/main/CHANGELOG.md) for curated release highlights.
+
+            ---
           files: |
             release_artifacts/ApplyFlow-${{ github.ref_name }}-arm64-v8a.apk
             release_artifacts/ApplyFlow-${{ github.ref_name }}-universal.apk
