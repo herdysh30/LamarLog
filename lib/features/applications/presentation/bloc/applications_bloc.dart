@@ -40,6 +40,14 @@ class _ApplicationsUpdated extends ApplicationsEvent {
   List<Object?> get props => [applications];
 }
 
+class _ApplicationsLoadFailed extends ApplicationsEvent {
+  const _ApplicationsLoadFailed(this.message);
+  final String message;
+
+  @override
+  List<Object?> get props => [message];
+}
+
 class SearchQueryChanged extends ApplicationsEvent {
   const SearchQueryChanged(this.query);
   final String query;
@@ -360,6 +368,7 @@ class ApplicationsBloc extends Bloc<ApplicationsEvent, ApplicationsState> {
   ApplicationsBloc(this._db) : super(const ApplicationsState()) {
     on<LoadApplications>(_onLoadApplications);
     on<_ApplicationsUpdated>(_onApplicationsUpdated);
+    on<_ApplicationsLoadFailed>(_onApplicationsLoadFailed);
     on<SearchQueryChanged>(_onSearchQueryChanged);
     on<UpdateFilters>(_onUpdateFilters);
     on<ToggleStaleFilter>(_onToggleStaleFilter);
@@ -379,12 +388,11 @@ class ApplicationsBloc extends Bloc<ApplicationsEvent, ApplicationsState> {
     LoadApplications event,
     Emitter<ApplicationsState> emit,
   ) async {
+    emit(state.copyWith(isLoading: true));
     await _subscription?.cancel();
     _subscription = _db.watchActiveApplications().listen(
       (apps) => add(_ApplicationsUpdated(apps)),
-      onError: (Object e) {
-        // Handled cleanly
-      },
+      onError: (Object e) => add(_ApplicationsLoadFailed(e.toString())),
     );
   }
 
@@ -393,6 +401,13 @@ class ApplicationsBloc extends Bloc<ApplicationsEvent, ApplicationsState> {
     Emitter<ApplicationsState> emit,
   ) {
     emit(state.copyWith(applications: event.applications, isLoading: false));
+  }
+
+  void _onApplicationsLoadFailed(
+    _ApplicationsLoadFailed event,
+    Emitter<ApplicationsState> emit,
+  ) {
+    emit(state.copyWith(isLoading: false, errorMessage: event.message));
   }
 
   void _onSearchQueryChanged(
