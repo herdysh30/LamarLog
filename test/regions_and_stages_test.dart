@@ -1,8 +1,8 @@
 import 'dart:io';
 
-import 'package:applyflow/core/models/pipeline_stage_config.dart';
-import 'package:applyflow/core/services/indonesia_regions_service.dart';
-import 'package:applyflow/core/utils/contact_launcher.dart';
+import 'package:lamarlog/core/models/pipeline_stage_config.dart';
+import 'package:lamarlog/core/services/indonesia_regions_service.dart';
+import 'package:lamarlog/core/utils/contact_launcher.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

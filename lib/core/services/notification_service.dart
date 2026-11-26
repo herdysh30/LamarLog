@@ -53,7 +53,7 @@ class NotificationService {
       );
       _initialized = true;
     } catch (e) {
-      debugPrint('[ApplyFlow NotificationInitError] $e');
+      debugPrint('[LamarLog NotificationInitError] $e');
     }
   }
 
@@ -79,7 +79,7 @@ class NotificationService {
       }
       return true;
     } catch (e) {
-      debugPrint('[ApplyFlow NotificationPermissionError] $e');
+      debugPrint('[LamarLog NotificationPermissionError] $e');
       return false;
     }
   }
@@ -162,7 +162,7 @@ class NotificationService {
         notificationId1h: id1h,
       );
     } catch (e) {
-      debugPrint('[ApplyFlow NotificationScheduleError] $e');
+      debugPrint('[LamarLog NotificationScheduleError] $e');
       return const ReminderScheduleResult(
         status: ReminderStatus.scheduleFailed,
       );
@@ -176,7 +176,7 @@ class NotificationService {
       if (id24h != null) await _plugin.cancel(id: id24h);
       if (id1h != null) await _plugin.cancel(id: id1h);
     } catch (e) {
-      debugPrint('[ApplyFlow NotificationCancelError] $e');
+      debugPrint('[LamarLog NotificationCancelError] $e');
     }
   }
 }

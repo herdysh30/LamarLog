@@ -1,8 +1,8 @@
-import 'package:applyflow/core/database/app_database.dart';
-import 'package:applyflow/core/enums/application_enums.dart';
-import 'package:applyflow/core/utils/contact_launcher.dart';
-import 'package:applyflow/core/utils/csv_exporter.dart';
-import 'package:applyflow/core/utils/stale_application_helper.dart';
+import 'package:lamarlog/core/database/app_database.dart';
+import 'package:lamarlog/core/enums/application_enums.dart';
+import 'package:lamarlog/core/utils/contact_launcher.dart';
+import 'package:lamarlog/core/utils/csv_exporter.dart';
+import 'package:lamarlog/core/utils/stale_application_helper.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 JobApplication _makeApp({

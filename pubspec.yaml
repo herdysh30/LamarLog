@@ -1,4 +1,4 @@
-name: applyflow
+name: lamarlog
 description: "Offline-first Flutter job application tracker with Kanban pipeline, interview reminders, and funnel analytics."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.

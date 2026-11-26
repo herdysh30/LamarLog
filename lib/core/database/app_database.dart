@@ -320,7 +320,7 @@ class InterviewWithApplication {
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
     final dbFolder = await getApplicationDocumentsDirectory();
-    final file = File(p.join(dbFolder.path, 'applyflow.sqlite'));
+    final file = File(p.join(dbFolder.path, 'lamarlog.sqlite'));
     return NativeDatabase.createInBackground(file);
   });
 }

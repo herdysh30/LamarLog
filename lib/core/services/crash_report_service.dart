@@ -78,7 +78,7 @@ class CrashReportSendResult {
 }
 
 /// Captures sanitized runtime errors and submits anonymous bug reports to
-/// the ApplyFlow Cloudflare Worker proxy (which creates GitHub Issues safely
+/// the LamarLog Cloudflare Worker proxy (which creates GitHub Issues safely
 /// without requiring end users to have a GitHub account or embedding tokens).
 class CrashReportService {
   CrashReportService._();
@@ -87,9 +87,9 @@ class CrashReportService {
 
   static const String appVersion = '1.1.0';
   static const String githubOwner = 'herdysh30';
-  static const String githubRepo = 'ApplyFlow';
+  static const String githubRepo = 'LamarLog';
 
-  /// Configure via `--dart-define=REPORT_ENDPOINT=https://applyflow-report.<subdomain>.workers.dev/report`
+  /// Configure via `--dart-define=REPORT_ENDPOINT=https://lamarlog-report-worker.<subdomain>.workers.dev/report`
   /// or set directly after deploying `tools/report-worker`.
   static const String configuredEndpoint = String.fromEnvironment(
     'REPORT_ENDPOINT',

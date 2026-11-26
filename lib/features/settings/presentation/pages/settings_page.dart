@@ -57,7 +57,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
     try {
       final dir = await getApplicationDocumentsDirectory();
-      final dbFile = File(p.join(dir.path, 'applyflow.sqlite'));
+      final dbFile = File(p.join(dir.path, 'lamarlog.sqlite'));
       if (dbFile.existsSync()) {
         totalBytes += dbFile.lengthSync();
       }

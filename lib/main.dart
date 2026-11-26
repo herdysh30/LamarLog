@@ -27,7 +27,7 @@ Future<void> main() async {
       details.stack,
       source: 'flutter_framework',
     );
-    debugPrint('[ApplyFlow FlutterError] ${details.exceptionAsString()}');
+    debugPrint('[LamarLog FlutterError] ${details.exceptionAsString()}');
   };
 
   PlatformDispatcher.instance.onError = (Object error, StackTrace stack) {
@@ -36,7 +36,7 @@ Future<void> main() async {
       stack,
       source: 'platform_dispatcher',
     );
-    debugPrint('[ApplyFlow UncaughtError] $error\n$stack');
+    debugPrint('[LamarLog UncaughtError] $error\n$stack');
     return true;
   };
 
@@ -86,14 +86,14 @@ Future<void> main() async {
   try {
     preferences = await PreferencesService.create();
   } catch (e) {
-    debugPrint('[ApplyFlow PrefsFallback] $e');
+    debugPrint('[LamarLog PrefsFallback] $e');
     preferences = const PreferencesService.inMemory(onboardingDone: false);
   }
-  runApp(ApplyFlowApp(database: database, preferences: preferences));
+  runApp(LamarLogApp(database: database, preferences: preferences));
 }
 
-class ApplyFlowApp extends StatefulWidget {
-  const ApplyFlowApp({
+class LamarLogApp extends StatefulWidget {
+  const LamarLogApp({
     super.key,
     required this.database,
     this.preferences = const PreferencesService.inMemory(),
@@ -103,10 +103,10 @@ class ApplyFlowApp extends StatefulWidget {
   final PreferencesService preferences;
 
   @override
-  State<ApplyFlowApp> createState() => _ApplyFlowAppState();
+  State<LamarLogApp> createState() => _LamarLogAppState();
 }
 
-class _ApplyFlowAppState extends State<ApplyFlowApp> {
+class _LamarLogAppState extends State<LamarLogApp> {
   late ThemeMode _themeMode;
   late AppColorPalette _colorPalette;
   late String _defaultCurrency;

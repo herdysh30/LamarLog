@@ -12,9 +12,9 @@ class AboutPage extends StatelessWidget {
 
   static const String appVersion = '1.1.0';
   static final Uri _repoUri =
-      Uri.parse('https://github.com/herdysh30/ApplyFlow');
+      Uri.parse('https://github.com/herdysh30/LamarLog');
   static final Uri _releasesUri =
-      Uri.parse('https://github.com/herdysh30/ApplyFlow/releases');
+      Uri.parse('https://github.com/herdysh30/LamarLog/releases');
 
   @override
   Widget build(BuildContext context) {
@@ -191,7 +191,7 @@ class AboutPage extends StatelessWidget {
                   _AboutLinkTile(
                     icon: Icons.code_rounded,
                     title: s.aboutGithubRepo,
-                    subtitle: 'github.com/herdysh30/ApplyFlow',
+                    subtitle: 'github.com/herdysh30/LamarLog',
                     trailingIcon: Icons.open_in_new_rounded,
                     onTap: () => _openUri(context, _repoUri, s),
                   ),
@@ -199,7 +199,7 @@ class AboutPage extends StatelessWidget {
                   _AboutLinkTile(
                     icon: Icons.new_releases_outlined,
                     title: s.aboutReleases,
-                    subtitle: 'github.com/herdysh30/ApplyFlow/releases',
+                    subtitle: 'github.com/herdysh30/LamarLog/releases',
                     trailingIcon: Icons.open_in_new_rounded,
                     onTap: () => _openUri(context, _releasesUri, s),
                   ),

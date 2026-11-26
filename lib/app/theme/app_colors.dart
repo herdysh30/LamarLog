@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/enums/application_enums.dart';
 
-/// Selectable color theme palettes for ApplyFlow, tuned for WCAG AA contrast
+/// Selectable color theme palettes for LamarLog, tuned for WCAG AA contrast
 /// in both Light and Dark modes.
 enum AppColorPalette {
   indigo('Indigo'),

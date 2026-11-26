@@ -1,7 +1,7 @@
-# AGENTS.md — ApplyFlow (Flutter Job Application Tracker)
+# AGENTS.md — LamarLog (Flutter Job Application Tracker)
 
 ## 1. Project Overview
-* **App Name:** ApplyFlow
+* **App Name:** LamarLog
 * **Source of Truth:** [PRD.md](PRD.md) (v2.0.0) & [DESIGN.md](DESIGN.md)
 * **Stack:** Flutter 3.24+ / Dart 3.5+, `flutter_bloc` (v8.x), `drift` (SQLite), `flutter_local_notifications`, `flutter_pdfview`, `file_picker`.
 * **Architecture:** Clean Architecture + Feature-First (`lib/app/`, `lib/core/`, `lib/features/`).

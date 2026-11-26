@@ -12,13 +12,13 @@ class PreferencesService {
   final SharedPreferences? _prefs;
   final bool _fallbackOnboardingDone;
 
-  static const _kThemeMode = 'applyflow_theme_mode';
-  static const _kColorPalette = 'applyflow_color_palette';
-  static const _kDefaultCurrency = 'applyflow_default_currency';
-  static const _kLanguageCode = 'applyflow_language_code';
-  static const _kOnboardingDone = 'applyflow_onboarding_done';
-  static const _kCustomStageNames = 'applyflow_custom_stage_names';
-  static const _kPipelineStages = 'applyflow_pipeline_stages';
+  static const _kThemeMode = 'lamarlog_theme_mode';
+  static const _kColorPalette = 'lamarlog_color_palette';
+  static const _kDefaultCurrency = 'lamarlog_default_currency';
+  static const _kLanguageCode = 'lamarlog_language_code';
+  static const _kOnboardingDone = 'lamarlog_onboarding_done';
+  static const _kCustomStageNames = 'lamarlog_custom_stage_names';
+  static const _kPipelineStages = 'lamarlog_pipeline_stages';
 
   static Future<PreferencesService> create() async {
     final prefs = await SharedPreferences.getInstance();

@@ -1,6 +1,6 @@
-import 'package:applyflow/core/database/app_database.dart';
-import 'package:applyflow/core/enums/application_enums.dart';
-import 'package:applyflow/features/applications/presentation/bloc/applications_bloc.dart';
+import 'package:lamarlog/core/database/app_database.dart';
+import 'package:lamarlog/core/enums/application_enums.dart';
+import 'package:lamarlog/features/applications/presentation/bloc/applications_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 JobApplication _app({

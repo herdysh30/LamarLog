@@ -1,6 +1,6 @@
-import 'package:applyflow/core/database/app_database.dart';
-import 'package:applyflow/core/enums/application_enums.dart';
-import 'package:applyflow/features/analytics/domain/analytics_calculator.dart';
+import 'package:lamarlog/core/database/app_database.dart';
+import 'package:lamarlog/core/enums/application_enums.dart';
+import 'package:lamarlog/features/analytics/domain/analytics_calculator.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 StatusTransition _tx({

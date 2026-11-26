@@ -6,7 +6,7 @@ Cloudflare Worker ringan (gratis di Cloudflare Workers Free Tier) agar pengguna 
 
 ### 1. Buat Fine-Grained GitHub Token (Minimal Permission)
 1. Buka **GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token**.
-2. Pilih **Only select repositories → `herdysh30/ApplyFlow`**.
+2. Pilih **Only select repositories → `herdysh30/LamarLog`**.
 3. Pada **Repository permissions**, aktifkan **hanya**:
    - **Issues:** `Read and write`
    - *(Semua izin lain biarkan `No access`.)*

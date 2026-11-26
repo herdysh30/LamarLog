@@ -1,4 +1,4 @@
-import 'package:applyflow/core/services/crash_report_service.dart';
+import 'package:lamarlog/core/services/crash_report_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -10,7 +10,7 @@ void main() {
     test('redacts local usernames and private resume paths from errors', () {
       const rawWin = r'FileSystemException at C:\Users\Herdy\Documents\cv.pdf';
       const rawAndroid =
-          'Missing /data/user/0/com.applyflow.applyflow/app_flutter/resumes/secret_cv.pdf';
+          'Missing /data/user/0/com.lamarlog.lamarlog/app_flutter/resumes/secret_cv.pdf';
 
       expect(
         CrashReportService.sanitizeText(rawWin),
@@ -46,7 +46,7 @@ void main() {
 
       final uri = CrashReportService.buildPrefilledGitHubIssueUri(payload);
       expect(uri.host, 'github.com');
-      expect(uri.path, '/herdysh30/ApplyFlow/issues/new');
+      expect(uri.path, '/herdysh30/LamarLog/issues/new');
       expect(uri.queryParameters['labels'], 'bug,user-report');
       expect(uri.queryParameters['title'], contains('Saving new interview'));
       expect(uri.queryParameters['body'], contains('DatabaseException: disk full'));

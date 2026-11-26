@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-/// Shared Material 3 motion tokens and Reduce-Motion-aware helpers for ApplyFlow.
+/// Shared Material 3 motion tokens and Reduce-Motion-aware helpers for LamarLog.
 abstract final class AppMotion {
   // Timing tokens (express distance & consequence; exit faster than entrance)
   static const Duration fast = Duration(milliseconds: 120);

@@ -3,19 +3,19 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'package:applyflow/core/database/app_database.dart';
-import 'package:applyflow/main.dart';
+import 'package:lamarlog/core/database/app_database.dart';
+import 'package:lamarlog/main.dart';
 
 void main() {
   setUpAll(() {
     GoogleFonts.config.allowRuntimeFetching = false;
   });
 
-  testWidgets('ApplyFlowApp renders Pipeline shell',
+  testWidgets('LamarLogApp renders Pipeline shell',
       (WidgetTester tester) async {
     final db = AppDatabase(NativeDatabase.memory());
 
-    await tester.pumpWidget(ApplyFlowApp(database: db));
+    await tester.pumpWidget(LamarLogApp(database: db));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 

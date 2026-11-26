@@ -64,7 +64,7 @@ jobs:
             - **`LamarLog-${{ github.ref_name }}-arm64-v8a.apk`** — Recommended for most modern Android phones (smaller size).
             - **`LamarLog-${{ github.ref_name }}-universal.apk`** — Compatible with all Android architectures.
 
-            See [CHANGELOG.md](https://github.com/herdysh30/ApplyFlow/blob/main/CHANGELOG.md) for curated release highlights.
+            See [CHANGELOG.md](https://github.com/herdysh30/LamarLog/blob/main/CHANGELOG.md) for curated release highlights.
 
             ---
           files: |
