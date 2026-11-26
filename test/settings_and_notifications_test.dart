@@ -6,11 +6,13 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:lamarlog/app/theme/app_colors.dart';
 import 'package:lamarlog/core/database/app_database.dart';
 import 'package:lamarlog/core/l10n/app_strings.dart';
+import 'package:lamarlog/core/models/pipeline_stage_config.dart';
 import 'package:lamarlog/core/models/reminder_schedule_config.dart';
 import 'package:lamarlog/core/widgets/notification_permission_dialog.dart';
 import 'package:lamarlog/features/applications/presentation/bloc/applications_bloc.dart';
 import 'package:lamarlog/features/settings/presentation/pages/notification_settings_page.dart';
 import 'package:lamarlog/features/settings/presentation/pages/settings_page.dart';
+import 'package:lamarlog/features/settings/presentation/widgets/pipeline_stages_sheet.dart';
 
 void main() {
   setUpAll(() {
@@ -258,6 +260,71 @@ void main() {
       await tester.tap(find.text('Reset Default'));
       await tester.pumpAndSettle();
       expect(currentConfig, ReminderScheduleConfig.defaults);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.runAsync(() => db.close());
+    });
+  });
+
+  group('Pipeline Stages Manager Sheet', () {
+    testWidgets(
+        'Add Stage persists immediately without clicking Manage Save, while edits wait for Manage Save',
+        (tester) async {
+      final db = AppDatabase(NativeDatabase.memory());
+      List<PipelineStageConfig>? savedStages;
+
+      await tester.pumpWidget(
+        RepositoryProvider<AppDatabase>.value(
+          value: db,
+          child: BlocProvider<ApplicationsBloc>(
+            create: (_) => ApplicationsBloc(db),
+            child: AppLocaleScope(
+              strings: const AppStrings('en'),
+              child: MaterialApp(
+                home: Builder(
+                  builder: (context) => Scaffold(
+                    body: ElevatedButton(
+                      onPressed: () => showPipelineStagesManagerSheet(
+                        context,
+                        onSave: (stages) => savedStages = stages,
+                      ),
+                      child: const Text('Open Stages'),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open Stages'));
+      await tester.pumpAndSettle();
+
+      // Reorder first stage down (unsaved Manage change)
+      await tester.tap(find.byIcon(Icons.arrow_downward_rounded).first);
+      await tester.pumpAndSettle();
+      expect(savedStages, isNull);
+
+      // Open Add Stage dialog and tap Save in dialog
+      await tester.tap(find.text('Add Stage'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'Psikotes');
+      await tester.tap(find.text('Save').last);
+      await tester.pumpAndSettle();
+
+      // New stage is persisted immediately without committing the unsaved reorder
+      expect(savedStages, isNotNull);
+      expect(savedStages!.length, 6);
+      expect(savedStages!.last.label, 'Psikotes');
+      expect(savedStages!.first.id, 'wishlist');
+
+      // Now tapping Save in Manage commits the reorder as well
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+      expect(savedStages!.first.id, 'applied');
+      expect(savedStages!.last.label, 'Psikotes');
 
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump(const Duration(milliseconds: 50));

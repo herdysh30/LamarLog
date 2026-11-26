@@ -15,6 +15,7 @@ Future<void> showPipelineStagesManagerSheet(
   final bloc = context.read<ApplicationsBloc>();
   final currentApps = bloc.state.applications;
 
+  final persisted = List<PipelineStageConfig>.from(s.pipelineStages);
   final working = List<PipelineStageConfig>.from(s.pipelineStages);
   final deletedStagesToReassign = <String>[];
 
@@ -112,26 +113,30 @@ Future<void> showPipelineStagesManagerSheet(
                     onPressed: () {
                       final name = ctrl.text.trim();
                       if (name.isEmpty) return;
-                      setSheetState(() {
-                        if (isEditing) {
+                      if (isEditing) {
+                        setSheetState(() {
                           working[editIndex] = working[editIndex].copyWith(
                             label: name,
                             colorKey: selectedColor,
                           );
-                        } else {
-                          final newId = PipelineStageConfig.generateCustomId(
-                            name,
-                            working.map((e) => e.id),
-                          );
-                          working.add(
-                            PipelineStageConfig(
-                              id: newId,
-                              label: name,
-                              colorKey: selectedColor,
-                            ),
-                          );
-                        }
-                      });
+                        });
+                      } else {
+                        final newId = PipelineStageConfig.generateCustomId(
+                          name,
+                          {
+                            ...working.map((e) => e.id),
+                            ...persisted.map((e) => e.id),
+                          },
+                        );
+                        final newStage = PipelineStageConfig(
+                          id: newId,
+                          label: name,
+                          colorKey: selectedColor,
+                        );
+                        persisted.add(newStage);
+                        setSheetState(() => working.add(newStage));
+                        onSave(List<PipelineStageConfig>.from(persisted));
+                      }
                       Navigator.of(dCtx).pop();
                     },
                     child: Text(s.save),
