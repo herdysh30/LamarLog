@@ -1,3 +1,4 @@
+import 'package:drift/native.dart';
 import 'package:lamarlog/core/database/app_database.dart';
 import 'package:lamarlog/core/enums/application_enums.dart';
 import 'package:lamarlog/features/applications/presentation/bloc/applications_bloc.dart';
@@ -121,6 +122,61 @@ void main() {
         state.filteredApplications.map((e) => e.id).toList(),
         ['2', '1', '3'],
       );
+    });
+
+    test('stage filter narrows active apps but never hides terminal archive',
+        () {
+      final state = ApplicationsState(
+        applications: apps,
+        stageFilter: {ApplicationStatus.interview.name},
+        isLoading: false,
+      );
+
+      expect(state.hasActiveFilters, isTrue);
+      expect(state.activeApplications.map((e) => e.id).toList(), ['2']);
+      expect(state.activeApplicationsAllStages.map((e) => e.id).toSet(),
+          {'1', '2'});
+      expect(state.terminalApplications.map((e) => e.id).toList(), ['3']);
+      expect(state.isStageVisible(ApplicationStatus.interview.name), isTrue);
+      expect(state.isStageVisible(ApplicationStatus.applied.name), isFalse);
+    });
+
+    test('stage filter supports multiple stages and empty means all', () {
+      const base = ApplicationsState(isLoading: false);
+      final multi = base.copyWith(
+        applications: apps,
+        stageFilter: {
+          ApplicationStatus.applied.name,
+          ApplicationStatus.interview.name,
+        },
+      );
+      expect(multi.activeApplications.map((e) => e.id).toSet(), {'1', '2'});
+
+      final cleared = multi.copyWith(stageFilter: const {});
+      expect(cleared.hasActiveFilters, isFalse);
+      expect(cleared.isStageVisible(ApplicationStatus.screening.name), isTrue);
+    });
+  });
+
+  group('ApplicationsBloc stage filter events', () {
+    test('UpdateStageFilter sets and ResetFilters clears the stage filter',
+        () async {
+      final db = AppDatabase(NativeDatabase.memory());
+      final bloc = ApplicationsBloc(db);
+      addTearDown(() async {
+        await bloc.close();
+        await db.close();
+      });
+
+      bloc.add(const UpdateStageFilter({'screening', 'offering'}));
+      final filtered =
+          await bloc.stream.first.timeout(const Duration(seconds: 5));
+      expect(filtered.stageFilter, {'screening', 'offering'});
+      expect(filtered.hasActiveFilters, isTrue);
+
+      bloc.add(const ResetFilters());
+      final reset = await bloc.stream.first.timeout(const Duration(seconds: 5));
+      expect(reset.stageFilter, isEmpty);
     });
   });
 }
