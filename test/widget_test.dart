@@ -80,4 +80,21 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
     await tester.runAsync(() => db.close());
   });
+
+  testWidgets('Pushing a route from AppShell has no duplicate Hero tag error',
+      (WidgetTester tester) async {
+    final db = AppDatabase(NativeDatabase.memory());
+
+    await tester.pumpWidget(LamarLogApp(database: db));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Track Job'));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.runAsync(() => db.close());
+  });
 }

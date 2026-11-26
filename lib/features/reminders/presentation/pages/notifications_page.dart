@@ -327,6 +327,7 @@ class _NotificationsPageState extends State<NotificationsPage>
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'fab_notifications_schedule',
         onPressed: () => _startQuickSchedule(context, db),
         icon: const Icon(Icons.event_available_rounded, size: 20),
         label: Text(

@@ -479,6 +479,7 @@ class _PipelinePageState extends State<PipelinePage> {
       floatingActionButton: Padding(
         padding: EdgeInsets.only(bottom: isCompactHeight ? 4 : 40),
         child: FloatingActionButton.extended(
+          heroTag: 'fab_pipeline_add',
           onPressed: () => _openForm(context),
           icon: const Icon(Icons.add_rounded, size: 20),
           label: Text(

@@ -8,6 +8,7 @@ All notable changes to **LamarLog** (formerly ApplyFlow) are documented in this 
 - **In-App Update Checker (via Cloudflare Worker):** Added **Check for Updates** in About LamarLog (`UpdateCheckService` + `GET /latest-release` edge-cached route on `lamarlog-report-worker`) to check GitHub Releases, compare SemVer tags, preview release notes, and open direct APK downloads with GitHub fallback.
 
 ### Fixed
+- **Duplicate Hero Tag Crash on Navigation:** Added unique `heroTag` values to the Pipeline and Notifications FABs inside `FadeThroughIndexedStack` so pushing routes from any tab no longer triggers a duplicate Hero tag error.
 - **Analytics Wishlist Revert Accuracy:** Moving an application from Wishlist to Applied and back to Wishlist no longer counts reverted transitions as Applied, and resets `appliedAt` cleanly.
 - **Landscape Kanban Overflow & Compact Sidebar Layout:** Moved the LamarLog brand mark to the top of the side `NavigationRail` in landscape/tablet layouts, removed the duplicate top AppBar, compacted the Pipeline toolbar into a single responsive row, and made Kanban columns overflow-proof across narrow, landscape, and large-font viewports.
 - **Immediate Persist on Add Stage:** Saving in the Add Stage dialog now immediately persists the new stage without requiring a second Save in Manage Pipeline Stages (keeping Manage Save dedicated to rename, recolor, reorder, and delete).
