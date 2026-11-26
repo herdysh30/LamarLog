@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 
+import '../../../../core/l10n/app_strings.dart';
+
 class PdfPreviewPage extends StatefulWidget {
   const PdfPreviewPage({
     super.key,
@@ -24,6 +26,7 @@ class _PdfPreviewPageState extends State<PdfPreviewPage> {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppLocaleScope.of(context);
     final fileExists = File(widget.filePath).existsSync();
 
     return Scaffold(
@@ -53,12 +56,12 @@ class _PdfPreviewPageState extends State<PdfPreviewPage> {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'File tidak ditemukan',
+                      s.pdfFileNotFoundTitle,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 6),
-                    const Text(
-                      'File PDF di penyimpanan privat hilang atau rusak. Silakan lampirkan ulang.',
+                    Text(
+                      s.pdfFileNotFoundBody,
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -66,7 +69,15 @@ class _PdfPreviewPageState extends State<PdfPreviewPage> {
               ),
             )
           : _errorMessage != null
-              ? Center(child: Text('Error loading PDF: $_errorMessage'))
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Text(
+                      s.pdfLoadError(_errorMessage!),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                )
               : PDFView(
                   filePath: widget.filePath,
                   enableSwipe: true,

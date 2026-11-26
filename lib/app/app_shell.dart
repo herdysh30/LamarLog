@@ -5,7 +5,9 @@ import '../core/database/app_database.dart';
 import '../core/l10n/app_strings.dart';
 import '../core/layout/responsive.dart';
 import '../core/models/pipeline_stage_config.dart';
+import '../core/widgets/applyflow_widgets.dart';
 import '../features/analytics/presentation/pages/analytics_page.dart';
+import '../features/applications/presentation/bloc/applications_bloc.dart';
 import '../features/applications/presentation/pages/pipeline_page.dart';
 import '../features/reminders/presentation/pages/notifications_page.dart';
 import '../features/settings/presentation/pages/settings_page.dart';
@@ -74,7 +76,14 @@ class _AppShellState extends State<AppShell> {
       ),
     ];
 
-    return StreamBuilder<List<InterviewSchedule>>(
+    return BlocListener<ApplicationsBloc, ApplicationsState>(
+      listenWhen: (prev, curr) =>
+          curr.actionErrorId != prev.actionErrorId &&
+          curr.actionErrorMessage != null,
+      listener: (context, state) {
+        showErrorSnackBar(context, state.actionErrorMessage!);
+      },
+      child: StreamBuilder<List<InterviewSchedule>>(
       stream: db.watchUpcomingInterviews(),
       builder: (context, snapshot) {
         final upcomingCount = snapshot.data?.length ?? 0;
@@ -216,6 +225,7 @@ class _AppShellState extends State<AppShell> {
           ),
         );
       },
+      ),
     );
   }
 }

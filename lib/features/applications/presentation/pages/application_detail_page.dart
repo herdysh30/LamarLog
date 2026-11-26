@@ -662,6 +662,14 @@ class _ApplicationDetailPageState extends State<ApplicationDetailPage> {
               StreamBuilder<List<InterviewSchedule>>(
                 stream: db.watchInterviewsForApp(app.id),
                 builder: (context, snapshot) {
+                  if (snapshot.hasError) {
+                    return ErrorStateCard(
+                      compact: true,
+                      title: s.dbLoadErrorTitle,
+                      retryLabel: s.retry,
+                      onRetry: () => setState(() {}),
+                    );
+                  }
                   final schedules = snapshot.data ?? [];
                   return SurfaceCard(
                     child: Column(
@@ -895,6 +903,14 @@ class _ApplicationDetailPageState extends State<ApplicationDetailPage> {
               StreamBuilder<ResumeAttachment?>(
                 stream: db.watchResumeForApp(app.id),
                 builder: (context, snapshot) {
+                  if (snapshot.hasError) {
+                    return ErrorStateCard(
+                      compact: true,
+                      title: s.dbLoadErrorTitle,
+                      retryLabel: s.retry,
+                      onRetry: () => setState(() {}),
+                    );
+                  }
                   final resume = snapshot.data;
                   return SurfaceCard(
                     child: Column(
@@ -1000,6 +1016,14 @@ class _ApplicationDetailPageState extends State<ApplicationDetailPage> {
                         return StreamBuilder<List<StatusTransition>>(
                           stream: db.watchTransitionsForApp(app.id),
                           builder: (context, transSnap) {
+                            if (logSnap.hasError || transSnap.hasError) {
+                              return ErrorStateCard(
+                                compact: true,
+                                title: s.dbLoadErrorTitle,
+                                retryLabel: s.retry,
+                                onRetry: () => setState(() {}),
+                              );
+                            }
                             final entries = <_TimelineEntry>[
                               ...(logSnap.data ?? []).map(
                                 (l) => _TimelineEntry(
@@ -1367,7 +1391,11 @@ class _ApplicationDetailPageState extends State<ApplicationDetailPage> {
             ),
             FilledButton(
               onPressed: () async {
-                if (roundCtrl.text.trim().isEmpty) return;
+                final roundName = roundCtrl.text.trim();
+                if (roundName.isEmpty) {
+                  showErrorSnackBar(context, s.roundNameRequired);
+                  return;
+                }
                 final localDt = DateTime(
                   selectedDate.year,
                   selectedDate.month,
@@ -1375,45 +1403,57 @@ class _ApplicationDetailPageState extends State<ApplicationDetailPage> {
                   selectedTime.hour,
                   selectedTime.minute,
                 );
+                if (!localDt.isAfter(DateTime.now())) {
+                  showErrorSnackBar(context, s.pastInterviewError);
+                  return;
+                }
                 final utcDt = localDt.toUtc();
                 final scheduleId = _uuid.v4();
 
-                final reminderResult = await NotificationService.instance
-                    .scheduleInterviewReminders(
-                  scheduleId: scheduleId,
-                  companyName: app.companyName,
-                  roundName: roundCtrl.text.trim(),
-                  scheduledAtUtc: utcDt,
-                );
+                try {
+                  final reminderResult = await NotificationService.instance
+                      .scheduleInterviewReminders(
+                    scheduleId: scheduleId,
+                    companyName: app.companyName,
+                    roundName: roundName,
+                    scheduledAtUtc: utcDt,
+                  );
 
-                await db.insertInterviewSchedule(
-                  InterviewSchedulesCompanion.insert(
-                    id: scheduleId,
-                    applicationId: app.id,
-                    roundName: roundCtrl.text.trim(),
-                    scheduledAt: utcDt,
-                    meetingUrl: Value(linkCtrl.text.trim().isEmpty
-                        ? null
-                        : linkCtrl.text.trim()),
-                    notificationId24h: Value(reminderResult.notificationId24h),
-                    notificationId1h: Value(reminderResult.notificationId1h),
-                  ),
-                );
+                  await db.insertInterviewSchedule(
+                    InterviewSchedulesCompanion.insert(
+                      id: scheduleId,
+                      applicationId: app.id,
+                      roundName: roundName,
+                      scheduledAt: utcDt,
+                      meetingUrl: Value(linkCtrl.text.trim().isEmpty
+                          ? null
+                          : linkCtrl.text.trim()),
+                      notificationId24h:
+                          Value(reminderResult.notificationId24h),
+                      notificationId1h: Value(reminderResult.notificationId1h),
+                    ),
+                  );
 
-                if (ctx.mounted) Navigator.of(ctx).pop();
-                if (context.mounted) {
-                  final msg = switch (reminderResult.status) {
-                    ReminderStatus.scheduledBoth => s.remindersActiveBoth,
-                    ReminderStatus.scheduledOneHourOnly => s.reminderActive1h,
-                    ReminderStatus.lessThanOneHour => s.isId
-                        ? 'Jadwal kurang dari 1 jam lagi. Tidak ada alarm terjadwal.'
-                        : 'Scheduled under 1 hour away. No alarm scheduled.',
-                    ReminderStatus.permissionDenied => s.isId
-                        ? 'Jadwal disimpan, pengingat tidak aktif (izin notifikasi ditolak).'
-                        : 'Saved, reminders inactive (notification permission denied).',
-                  };
-                  ScaffoldMessenger.of(context)
-                      .showSnackBar(SnackBar(content: Text(msg)));
+                  if (ctx.mounted) Navigator.of(ctx).pop();
+                  if (context.mounted) {
+                    final msg = switch (reminderResult.status) {
+                      ReminderStatus.scheduledBoth => s.remindersActiveBoth,
+                      ReminderStatus.scheduledOneHourOnly => s.reminderActive1h,
+                      ReminderStatus.lessThanOneHour => s.isId
+                          ? 'Jadwal kurang dari 1 jam lagi. Tidak ada alarm terjadwal.'
+                          : 'Scheduled under 1 hour away. No alarm scheduled.',
+                      ReminderStatus.permissionDenied => s.isId
+                          ? 'Jadwal disimpan, pengingat tidak aktif (izin notifikasi ditolak).'
+                          : 'Saved, reminders inactive (notification permission denied).',
+                      ReminderStatus.scheduleFailed => s.reminderScheduleFailed,
+                    };
+                    ScaffoldMessenger.of(context)
+                        .showSnackBar(SnackBar(content: Text(msg)));
+                  }
+                } catch (_) {
+                  if (context.mounted) {
+                    showErrorSnackBar(context, s.scheduleSaveFailed);
+                  }
                 }
               },
               child: Text(s.save),
@@ -1430,47 +1470,53 @@ class _ApplicationDetailPageState extends State<ApplicationDetailPage> {
     JobApplication app,
   ) async {
     final s = AppLocaleScope.of(context);
-    final result = await FilePicker.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf'],
-    );
-    if (result.isEmpty || result.single.path == null) return;
+    try {
+      final result = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+      );
+      if (result.isEmpty || result.single.path == null) return;
 
-    final picked = File(result.single.path!);
-    final sizeBytes = await picked.length();
+      final picked = File(result.single.path!);
+      final sizeBytes = await picked.length();
 
-    if (sizeBytes > _maxPdfBytes) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(s.isId
+      if (sizeBytes > _maxPdfBytes) {
+        if (context.mounted) {
+          showErrorSnackBar(
+            context,
+            s.isId
                 ? 'File melebihi batas maksimal 10 MB.'
-                : 'File exceeds the 10 MB maximum limit.'),
-          ),
-        );
+                : 'File exceeds the 10 MB maximum limit.',
+          );
+        }
+        return;
       }
-      return;
+
+      final docsDir = await getApplicationDocumentsDirectory();
+      final resumesDir = Directory(p.join(docsDir.path, 'resumes'));
+      if (!resumesDir.existsSync()) {
+        resumesDir.createSync(recursive: true);
+      }
+
+      final uniqueName =
+          '${app.id}_${DateTime.now().millisecondsSinceEpoch}.pdf';
+      final destFile = await picked.copy(p.join(resumesDir.path, uniqueName));
+
+      await db.upsertResumeAttachment(
+        ResumeAttachmentsCompanion.insert(
+          id: _uuid.v4(),
+          applicationId: app.id,
+          originalFileName: result.single.name,
+          privateFilePath: destFile.path,
+          fileSizeBytes: sizeBytes,
+          attachedAt: DateTime.now().toUtc(),
+        ),
+      );
+    } catch (_) {
+      if (context.mounted) {
+        showErrorSnackBar(context, s.pdfAttachFailed);
+      }
     }
-
-    final docsDir = await getApplicationDocumentsDirectory();
-    final resumesDir = Directory(p.join(docsDir.path, 'resumes'));
-    if (!resumesDir.existsSync()) {
-      resumesDir.createSync(recursive: true);
-    }
-
-    final uniqueName = '${app.id}_${DateTime.now().millisecondsSinceEpoch}.pdf';
-    final destFile = await picked.copy(p.join(resumesDir.path, uniqueName));
-
-    await db.upsertResumeAttachment(
-      ResumeAttachmentsCompanion.insert(
-        id: _uuid.v4(),
-        applicationId: app.id,
-        originalFileName: result.single.name,
-        privateFilePath: destFile.path,
-        fileSizeBytes: sizeBytes,
-        attachedAt: DateTime.now().toUtc(),
-      ),
-    );
   }
 
   void _showStatusPicker(
@@ -1851,24 +1897,28 @@ class _ApplicationDetailPageState extends State<ApplicationDetailPage> {
     JobApplication app,
     AppStrings s,
   ) async {
-    await db.insertTimelineLog(
-      TimelineLogsCompanion.insert(
-        id: _uuid.v4(),
-        applicationId: app.id,
-        title: s.isId ? 'Follow-up terkirim' : 'Follow-up sent',
-        note: Value(
-          s.isId
-              ? 'Mengirim pesan follow-up terkait perkembangan lamaran.'
-              : 'Sent a polite follow-up regarding application status.',
+    try {
+      await db.insertTimelineLog(
+        TimelineLogsCompanion.insert(
+          id: _uuid.v4(),
+          applicationId: app.id,
+          title: s.isId ? 'Follow-up terkirim' : 'Follow-up sent',
+          note: Value(
+            s.isId
+                ? 'Mengirim pesan follow-up terkait perkembangan lamaran.'
+                : 'Sent a polite follow-up regarding application status.',
+          ),
+          loggedAt: DateTime.now().toUtc(),
         ),
-        loggedAt: DateTime.now().toUtc(),
-      ),
-    );
-    await db.touchApplicationUpdatedAt(app.id);
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(s.followUpLoggedMsg)),
       );
+      await db.touchApplicationUpdatedAt(app.id);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(s.followUpLoggedMsg)),
+        );
+      }
+    } catch (_) {
+      if (context.mounted) showErrorSnackBar(context, s.noteSaveFailed);
     }
   }
 

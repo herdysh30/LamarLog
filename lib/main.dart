@@ -1,3 +1,6 @@
+import 'dart:ui';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -13,8 +16,67 @@ import 'features/onboarding/presentation/pages/onboarding_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Global error boundaries so uncaught framework/async errors never crash silently
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.presentError(details);
+    debugPrint('[ApplyFlow FlutterError] ${details.exceptionAsString()}');
+  };
+
+  PlatformDispatcher.instance.onError = (Object error, StackTrace stack) {
+    debugPrint('[ApplyFlow UncaughtError] $error\n$stack');
+    return true;
+  };
+
+  ErrorWidget.builder = (FlutterErrorDetails details) {
+    return Material(
+      color: const Color(0xFFFAF8FF),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.error_outline_rounded,
+                  size: 40, color: Color(0xFFBA1A1A)),
+              const SizedBox(height: 10),
+              const Text(
+                'Something went wrong displaying this section.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF131B2E),
+                ),
+              ),
+              if (kDebugMode) ...[
+                const SizedBox(height: 6),
+                Text(
+                  details.exceptionAsString(),
+                  textAlign: TextAlign.center,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF464555),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  };
+
   final database = AppDatabase();
-  final preferences = await PreferencesService.create();
+  PreferencesService preferences;
+  try {
+    preferences = await PreferencesService.create();
+  } catch (e) {
+    debugPrint('[ApplyFlow PrefsFallback] $e');
+    preferences = const PreferencesService.inMemory(onboardingDone: false);
+  }
   runApp(ApplyFlowApp(database: database, preferences: preferences));
 }
 

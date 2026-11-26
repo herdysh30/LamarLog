@@ -244,6 +244,8 @@ class ApplicationsState extends Equatable {
     this.sortOption = PipelineSortOption.latestMove,
     this.isLoading = true,
     this.errorMessage,
+    this.actionErrorMessage,
+    this.actionErrorId = 0,
   });
 
   final List<JobApplication> applications;
@@ -254,6 +256,8 @@ class ApplicationsState extends Equatable {
   final PipelineSortOption sortOption;
   final bool isLoading;
   final String? errorMessage;
+  final String? actionErrorMessage;
+  final int actionErrorId;
 
   bool get hasActiveFilters =>
       workplaceFilter != null ||
@@ -333,6 +337,8 @@ class ApplicationsState extends Equatable {
     PipelineSortOption? sortOption,
     bool? isLoading,
     String? errorMessage,
+    String? actionErrorMessage,
+    int? actionErrorId,
   }) {
     return ApplicationsState(
       applications: applications ?? this.applications,
@@ -347,6 +353,8 @@ class ApplicationsState extends Equatable {
       sortOption: sortOption ?? this.sortOption,
       isLoading: isLoading ?? this.isLoading,
       errorMessage: errorMessage,
+      actionErrorMessage: actionErrorMessage ?? this.actionErrorMessage,
+      actionErrorId: actionErrorId ?? this.actionErrorId,
     );
   }
 
@@ -360,6 +368,8 @@ class ApplicationsState extends Equatable {
         sortOption,
         isLoading,
         errorMessage,
+        actionErrorMessage,
+        actionErrorId,
       ];
 }
 
@@ -450,89 +460,104 @@ class ApplicationsBloc extends Bloc<ApplicationsEvent, ApplicationsState> {
     ));
   }
 
+  void _emitActionError(Emitter<ApplicationsState> emit, Object error) {
+    emit(state.copyWith(
+      actionErrorMessage: error.toString(),
+      actionErrorId: state.actionErrorId + 1,
+    ));
+  }
+
   Future<void> _onAddApplication(
     AddApplication event,
     Emitter<ApplicationsState> emit,
   ) async {
-    final now = DateTime.now().toUtc();
-    final appId = _uuid.v4();
-    final appliedAt =
-        event.statusId == ApplicationStatus.wishlist.name ? null : now;
+    try {
+      final now = DateTime.now().toUtc();
+      final appId = _uuid.v4();
+      final appliedAt =
+          event.statusId == ApplicationStatus.wishlist.name ? null : now;
 
-    await _db.insertApplicationWithTransition(
-      JobApplicationsCompanion.insert(
-        id: appId,
-        companyName: event.companyName,
-        roleTitle: event.roleTitle,
-        location: Value(event.location),
-        workplaceType: Value(event.workplaceType.name),
-        jobType: Value(event.jobType.name),
-        currentStatus: Value(event.statusId),
-        priority: Value(event.priority.name),
-        currency: Value(event.currency),
-        salaryPeriod: Value(event.salaryPeriod.name),
-        expectedSalary: Value(event.expectedSalary),
-        offeredSalary: Value(event.offeredSalary),
-        vacancyUrl: Value(event.vacancyUrl),
-        sourcePlatform: Value(event.sourcePlatform),
-        recruiterName: Value(event.recruiterName),
-        recruiterContact: Value(event.recruiterContact),
-        appliedAt: Value(appliedAt),
-        createdAt: now,
-        updatedAt: now,
-      ),
-      StatusTransitionsCompanion.insert(
-        id: _uuid.v4(),
-        applicationId: appId,
-        fromStatus: const Value(null),
-        toStatus: event.statusId,
-        transitionedAt: now,
-      ),
-    );
+      await _db.insertApplicationWithTransition(
+        JobApplicationsCompanion.insert(
+          id: appId,
+          companyName: event.companyName,
+          roleTitle: event.roleTitle,
+          location: Value(event.location),
+          workplaceType: Value(event.workplaceType.name),
+          jobType: Value(event.jobType.name),
+          currentStatus: Value(event.statusId),
+          priority: Value(event.priority.name),
+          currency: Value(event.currency),
+          salaryPeriod: Value(event.salaryPeriod.name),
+          expectedSalary: Value(event.expectedSalary),
+          offeredSalary: Value(event.offeredSalary),
+          vacancyUrl: Value(event.vacancyUrl),
+          sourcePlatform: Value(event.sourcePlatform),
+          recruiterName: Value(event.recruiterName),
+          recruiterContact: Value(event.recruiterContact),
+          appliedAt: Value(appliedAt),
+          createdAt: now,
+          updatedAt: now,
+        ),
+        StatusTransitionsCompanion.insert(
+          id: _uuid.v4(),
+          applicationId: appId,
+          fromStatus: const Value(null),
+          toStatus: event.statusId,
+          transitionedAt: now,
+        ),
+      );
+    } catch (e) {
+      _emitActionError(emit, e);
+    }
   }
 
   Future<void> _onUpdateApplication(
     UpdateApplication event,
     Emitter<ApplicationsState> emit,
   ) async {
-    final now = DateTime.now().toUtc();
-    final statusChanged = event.existing.currentStatus != event.statusId;
-    final shouldSetAppliedAt = event.existing.appliedAt == null &&
-        event.statusId != ApplicationStatus.wishlist.name;
+    try {
+      final now = DateTime.now().toUtc();
+      final statusChanged = event.existing.currentStatus != event.statusId;
+      final shouldSetAppliedAt = event.existing.appliedAt == null &&
+          event.statusId != ApplicationStatus.wishlist.name;
 
-    await _db.updateApplicationDetails(
-      JobApplicationsCompanion(
-        id: Value(event.existing.id),
-        companyName: Value(event.companyName),
-        roleTitle: Value(event.roleTitle),
-        location: Value(event.location),
-        workplaceType: Value(event.workplaceType.name),
-        jobType: Value(event.jobType.name),
-        currentStatus: Value(event.statusId),
-        priority: Value(event.priority.name),
-        currency: Value(event.currency),
-        salaryPeriod: Value(event.salaryPeriod.name),
-        expectedSalary: Value(event.expectedSalary),
-        offeredSalary: Value(event.offeredSalary),
-        vacancyUrl: Value(event.vacancyUrl),
-        sourcePlatform: Value(event.sourcePlatform),
-        recruiterName: Value(event.recruiterName),
-        recruiterContact: Value(event.recruiterContact),
-        appliedAt: shouldSetAppliedAt ? Value(now) : const Value.absent(),
-        updatedAt: Value(now),
-      ),
-    );
+      await _db.updateApplicationDetails(
+        JobApplicationsCompanion(
+          id: Value(event.existing.id),
+          companyName: Value(event.companyName),
+          roleTitle: Value(event.roleTitle),
+          location: Value(event.location),
+          workplaceType: Value(event.workplaceType.name),
+          jobType: Value(event.jobType.name),
+          currentStatus: Value(event.statusId),
+          priority: Value(event.priority.name),
+          currency: Value(event.currency),
+          salaryPeriod: Value(event.salaryPeriod.name),
+          expectedSalary: Value(event.expectedSalary),
+          offeredSalary: Value(event.offeredSalary),
+          vacancyUrl: Value(event.vacancyUrl),
+          sourcePlatform: Value(event.sourcePlatform),
+          recruiterName: Value(event.recruiterName),
+          recruiterContact: Value(event.recruiterContact),
+          appliedAt: shouldSetAppliedAt ? Value(now) : const Value.absent(),
+          updatedAt: Value(now),
+        ),
+      );
 
-    if (statusChanged) {
-      await _db.into(_db.statusTransitions).insert(
-            StatusTransitionsCompanion.insert(
-              id: _uuid.v4(),
-              applicationId: event.existing.id,
-              fromStatus: Value(event.existing.currentStatus),
-              toStatus: event.statusId,
-              transitionedAt: now,
-            ),
-          );
+      if (statusChanged) {
+        await _db.into(_db.statusTransitions).insert(
+              StatusTransitionsCompanion.insert(
+                id: _uuid.v4(),
+                applicationId: event.existing.id,
+                fromStatus: Value(event.existing.currentStatus),
+                toStatus: event.statusId,
+                transitionedAt: now,
+              ),
+            );
+      }
+    } catch (e) {
+      _emitActionError(emit, e);
     }
   }
 
@@ -542,23 +567,27 @@ class ApplicationsBloc extends Bloc<ApplicationsEvent, ApplicationsState> {
   ) async {
     if (event.application.currentStatus == event.newStatusId) return;
 
-    final now = DateTime.now().toUtc();
-    final shouldSetAppliedAt = event.application.appliedAt == null &&
-        event.newStatusId != ApplicationStatus.wishlist.name;
+    try {
+      final now = DateTime.now().toUtc();
+      final shouldSetAppliedAt = event.application.appliedAt == null &&
+          event.newStatusId != ApplicationStatus.wishlist.name;
 
-    await _db.updateApplicationStatus(
-      applicationId: event.application.id,
-      fromStatus: event.application.currentStatus,
-      toStatus: event.newStatusId,
-      appliedAt: shouldSetAppliedAt ? now : null,
-      transition: StatusTransitionsCompanion.insert(
-        id: _uuid.v4(),
+      await _db.updateApplicationStatus(
         applicationId: event.application.id,
-        fromStatus: Value(event.application.currentStatus),
+        fromStatus: event.application.currentStatus,
         toStatus: event.newStatusId,
-        transitionedAt: now,
-      ),
-    );
+        appliedAt: shouldSetAppliedAt ? now : null,
+        transition: StatusTransitionsCompanion.insert(
+          id: _uuid.v4(),
+          applicationId: event.application.id,
+          fromStatus: Value(event.application.currentStatus),
+          toStatus: event.newStatusId,
+          transitionedAt: now,
+        ),
+      );
+    } catch (e) {
+      _emitActionError(emit, e);
+    }
   }
 
   Future<void> _onReassignStageApplications(
@@ -566,27 +595,31 @@ class ApplicationsBloc extends Bloc<ApplicationsEvent, ApplicationsState> {
     Emitter<ApplicationsState> emit,
   ) async {
     if (event.fromStageId == event.toStageId) return;
-    final affected = state.applications
-        .where((a) => a.currentStatus == event.fromStageId)
-        .toList();
-    for (final app in affected) {
-      final now = DateTime.now().toUtc();
-      await _db.updateApplicationStatus(
-        applicationId: app.id,
-        fromStatus: app.currentStatus,
-        toStatus: event.toStageId,
-        appliedAt: app.appliedAt == null &&
-                event.toStageId != ApplicationStatus.wishlist.name
-            ? now
-            : null,
-        transition: StatusTransitionsCompanion.insert(
-          id: _uuid.v4(),
+    try {
+      final affected = state.applications
+          .where((a) => a.currentStatus == event.fromStageId)
+          .toList();
+      for (final app in affected) {
+        final now = DateTime.now().toUtc();
+        await _db.updateApplicationStatus(
           applicationId: app.id,
-          fromStatus: Value(app.currentStatus),
+          fromStatus: app.currentStatus,
           toStatus: event.toStageId,
-          transitionedAt: now,
-        ),
-      );
+          appliedAt: app.appliedAt == null &&
+                  event.toStageId != ApplicationStatus.wishlist.name
+              ? now
+              : null,
+          transition: StatusTransitionsCompanion.insert(
+            id: _uuid.v4(),
+            applicationId: app.id,
+            fromStatus: Value(app.currentStatus),
+            toStatus: event.toStageId,
+            transitionedAt: now,
+          ),
+        );
+      }
+    } catch (e) {
+      _emitActionError(emit, e);
     }
   }
 
@@ -594,28 +627,32 @@ class ApplicationsBloc extends Bloc<ApplicationsEvent, ApplicationsState> {
     DeleteApplication event,
     Emitter<ApplicationsState> emit,
   ) async {
-    // Cancel scheduled interview notifications and remove local PDF before deleting
-    final schedules = await (_db.select(_db.interviewSchedules)
-          ..where((t) => t.applicationId.equals(event.id)))
-        .get();
-    for (final s in schedules) {
-      await NotificationService.instance
-          .cancelReminders(s.notificationId24h, s.notificationId1h);
-    }
-
-    final resumes = await (_db.select(_db.resumeAttachments)
-          ..where((t) => t.applicationId.equals(event.id)))
-        .get();
-    for (final r in resumes) {
-      final f = File(r.privateFilePath);
-      if (f.existsSync()) {
-        try {
-          f.deleteSync();
-        } catch (_) {}
+    try {
+      // Cancel scheduled interview notifications and remove local PDF before deleting
+      final schedules = await (_db.select(_db.interviewSchedules)
+            ..where((t) => t.applicationId.equals(event.id)))
+          .get();
+      for (final s in schedules) {
+        await NotificationService.instance
+            .cancelReminders(s.notificationId24h, s.notificationId1h);
       }
-    }
 
-    await _db.deleteApplicationById(event.id);
+      final resumes = await (_db.select(_db.resumeAttachments)
+            ..where((t) => t.applicationId.equals(event.id)))
+          .get();
+      for (final r in resumes) {
+        final f = File(r.privateFilePath);
+        if (f.existsSync()) {
+          try {
+            f.deleteSync();
+          } catch (_) {}
+        }
+      }
+
+      await _db.deleteApplicationById(event.id);
+    } catch (e) {
+      _emitActionError(emit, e);
+    }
   }
 
   @override

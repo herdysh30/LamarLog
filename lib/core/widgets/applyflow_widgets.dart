@@ -295,3 +295,125 @@ String salaryPeriodSuffix(JobApplication app, {bool isId = false}) {
   }
   return isId ? '/bln' : '/mo';
 }
+
+/// Reusable centered error state with optional retry action.
+class ErrorStateCard extends StatelessWidget {
+  const ErrorStateCard({
+    super.key,
+    required this.title,
+    this.detail,
+    this.retryLabel,
+    this.onRetry,
+    this.compact = false,
+  });
+
+  final String title;
+  final String? detail;
+  final String? retryLabel;
+  final VoidCallback? onRetry;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    if (compact) {
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: cs.errorContainer.withValues(alpha: 0.4),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.error_outline_rounded, size: 20, color: cs.error),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                title,
+                style: theme.textTheme.bodySmall?.copyWith(color: cs.error),
+              ),
+            ),
+            if (onRetry != null)
+              TextButton(
+                onPressed: onRetry,
+                child: Text(retryLabel ?? 'Retry'),
+              ),
+          ],
+        ),
+      );
+    }
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: cs.errorContainer.withValues(alpha: 0.65),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.error_outline_rounded,
+                  size: 30, color: cs.error),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              title,
+              style: theme.textTheme.titleMedium,
+              textAlign: TextAlign.center,
+            ),
+            if (detail != null && detail!.trim().isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(
+                detail!,
+                style: theme.textTheme.bodySmall,
+                textAlign: TextAlign.center,
+                maxLines: 4,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+            if (onRetry != null) ...[
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: onRetry,
+                icon: const Icon(Icons.refresh_rounded, size: 18),
+                label: Text(retryLabel ?? 'Retry'),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Displays a consistent floating error SnackBar safely when context is mounted.
+void showErrorSnackBar(BuildContext context, String message) {
+  if (!context.mounted) return;
+  final cs = Theme.of(context).colorScheme;
+  ScaffoldMessenger.of(context)
+    ..hideCurrentSnackBar()
+    ..showSnackBar(
+      SnackBar(
+        backgroundColor: cs.error,
+        content: Row(
+          children: [
+            const Icon(Icons.error_outline_rounded,
+                color: Colors.white, size: 18),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+}

@@ -32,6 +32,14 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
       body: StreamBuilder<List<StatusTransition>>(
         stream: db.watchAllTransitions(),
         builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return ErrorStateCard(
+              title: s.dbLoadErrorTitle,
+              detail: snapshot.error.toString(),
+              retryLabel: s.retry,
+              onRetry: () => setState(() {}),
+            );
+          }
           if (snapshot.connectionState == ConnectionState.waiting &&
               !snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());

@@ -38,6 +38,14 @@ class _NotificationsPageState extends State<NotificationsPage> {
       body: StreamBuilder<List<InterviewWithApplication>>(
         stream: db.watchAllInterviewsWithApplications(),
         builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return ErrorStateCard(
+              title: s.dbLoadErrorTitle,
+              detail: snapshot.error.toString(),
+              retryLabel: s.retry,
+              onRetry: () => setState(() {}),
+            );
+          }
           if (snapshot.connectionState == ConnectionState.waiting &&
               !snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
@@ -232,11 +240,17 @@ class _NotificationsPageState extends State<NotificationsPage> {
                         );
                       },
                       onDelete: () async {
-                        await NotificationService.instance.cancelReminders(
-                          item.schedule.notificationId24h,
-                          item.schedule.notificationId1h,
-                        );
-                        await db.deleteInterviewSchedule(item.schedule.id);
+                        try {
+                          await NotificationService.instance.cancelReminders(
+                            item.schedule.notificationId24h,
+                            item.schedule.notificationId1h,
+                          );
+                          await db.deleteInterviewSchedule(item.schedule.id);
+                        } catch (_) {
+                          if (context.mounted) {
+                            showErrorSnackBar(context, s.actionFailedGeneric);
+                          }
+                        }
                       },
                     );
                   },
@@ -265,37 +279,44 @@ class _NotificationsPageState extends State<NotificationsPage> {
     final s = AppLocaleScope.of(context);
     int reactivated = 0;
 
-    for (final entry in items) {
-      final res = await NotificationService.instance.scheduleInterviewReminders(
-        scheduleId: entry.schedule.id,
-        companyName: entry.application.companyName,
-        roundName: entry.schedule.roundName,
-        scheduledAtUtc: entry.schedule.scheduledAt,
-      );
-      if (res.notificationId1h != null || res.notificationId24h != null) {
-        await db.updateInterviewReminderIds(
-          id: entry.schedule.id,
-          notificationId24h: res.notificationId24h,
-          notificationId1h: res.notificationId1h,
+    try {
+      for (final entry in items) {
+        final res =
+            await NotificationService.instance.scheduleInterviewReminders(
+          scheduleId: entry.schedule.id,
+          companyName: entry.application.companyName,
+          roundName: entry.schedule.roundName,
+          scheduledAtUtc: entry.schedule.scheduledAt,
         );
-        reactivated++;
+        if (res.notificationId1h != null || res.notificationId24h != null) {
+          await db.updateInterviewReminderIds(
+            id: entry.schedule.id,
+            notificationId24h: res.notificationId24h,
+            notificationId1h: res.notificationId1h,
+          );
+          reactivated++;
+        }
       }
-    }
 
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            reactivated > 0
-                ? (s.isId
-                    ? '$reactivated pengingat berhasil diaktifkan kembali.'
-                    : '$reactivated reminder(s) re-enabled.')
-                : (s.isId
-                    ? 'Izin notifikasi belum diberikan di pengaturan perangkat.'
-                    : 'Notification permission is still denied in device settings.'),
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              reactivated > 0
+                  ? (s.isId
+                      ? '$reactivated pengingat berhasil diaktifkan kembali.'
+                      : '$reactivated reminder(s) re-enabled.')
+                  : (s.isId
+                      ? 'Izin notifikasi belum diberikan di pengaturan perangkat.'
+                      : 'Notification permission is still denied in device settings.'),
+            ),
           ),
-        ),
-      );
+        );
+      }
+    } catch (_) {
+      if (context.mounted) {
+        showErrorSnackBar(context, s.actionFailedGeneric);
+      }
     }
   }
 
@@ -454,7 +475,11 @@ class _NotificationsPageState extends State<NotificationsPage> {
             ),
             FilledButton(
               onPressed: () async {
-                if (roundCtrl.text.trim().isEmpty) return;
+                final roundName = roundCtrl.text.trim();
+                if (roundName.isEmpty) {
+                  showErrorSnackBar(context, s.roundNameRequired);
+                  return;
+                }
                 final localDt = DateTime(
                   selectedDate.year,
                   selectedDate.month,
@@ -462,45 +487,56 @@ class _NotificationsPageState extends State<NotificationsPage> {
                   selectedTime.hour,
                   selectedTime.minute,
                 );
+                if (!localDt.isAfter(DateTime.now())) {
+                  showErrorSnackBar(context, s.pastInterviewError);
+                  return;
+                }
                 final utcDt = localDt.toUtc();
                 final scheduleId = _uuid.v4();
 
-                final res = await NotificationService.instance
-                    .scheduleInterviewReminders(
-                  scheduleId: scheduleId,
-                  companyName: app.companyName,
-                  roundName: roundCtrl.text.trim(),
-                  scheduledAtUtc: utcDt,
-                );
+                try {
+                  final res = await NotificationService.instance
+                      .scheduleInterviewReminders(
+                    scheduleId: scheduleId,
+                    companyName: app.companyName,
+                    roundName: roundName,
+                    scheduledAtUtc: utcDt,
+                  );
 
-                await db.insertInterviewSchedule(
-                  InterviewSchedulesCompanion.insert(
-                    id: scheduleId,
-                    applicationId: app.id,
-                    roundName: roundCtrl.text.trim(),
-                    scheduledAt: utcDt,
-                    meetingUrl: Value(linkCtrl.text.trim().isEmpty
-                        ? null
-                        : linkCtrl.text.trim()),
-                    notificationId24h: Value(res.notificationId24h),
-                    notificationId1h: Value(res.notificationId1h),
-                  ),
-                );
+                  await db.insertInterviewSchedule(
+                    InterviewSchedulesCompanion.insert(
+                      id: scheduleId,
+                      applicationId: app.id,
+                      roundName: roundName,
+                      scheduledAt: utcDt,
+                      meetingUrl: Value(linkCtrl.text.trim().isEmpty
+                          ? null
+                          : linkCtrl.text.trim()),
+                      notificationId24h: Value(res.notificationId24h),
+                      notificationId1h: Value(res.notificationId1h),
+                    ),
+                  );
 
-                if (ctx.mounted) Navigator.of(ctx).pop();
-                if (context.mounted) {
-                  final msg = switch (res.status) {
-                    ReminderStatus.scheduledBoth => s.remindersActiveBoth,
-                    ReminderStatus.scheduledOneHourOnly => s.reminderActive1h,
-                    ReminderStatus.lessThanOneHour => s.isId
-                        ? 'Jadwal kurang dari 1 jam lagi. Tidak ada alarm terjadwal.'
-                        : 'Scheduled under 1 hour away. No alarm scheduled.',
-                    ReminderStatus.permissionDenied => s.isId
-                        ? 'Jadwal disimpan, pengingat tidak aktif (izin notifikasi ditolak).'
-                        : 'Saved, reminders inactive (notification permission denied).',
-                  };
-                  ScaffoldMessenger.of(context)
-                      .showSnackBar(SnackBar(content: Text(msg)));
+                  if (ctx.mounted) Navigator.of(ctx).pop();
+                  if (context.mounted) {
+                    final msg = switch (res.status) {
+                      ReminderStatus.scheduledBoth => s.remindersActiveBoth,
+                      ReminderStatus.scheduledOneHourOnly => s.reminderActive1h,
+                      ReminderStatus.lessThanOneHour => s.isId
+                          ? 'Jadwal kurang dari 1 jam lagi. Tidak ada alarm terjadwal.'
+                          : 'Scheduled under 1 hour away. No alarm scheduled.',
+                      ReminderStatus.permissionDenied => s.isId
+                          ? 'Jadwal disimpan, pengingat tidak aktif (izin notifikasi ditolak).'
+                          : 'Saved, reminders inactive (notification permission denied).',
+                      ReminderStatus.scheduleFailed => s.reminderScheduleFailed,
+                    };
+                    ScaffoldMessenger.of(context)
+                        .showSnackBar(SnackBar(content: Text(msg)));
+                  }
+                } catch (_) {
+                  if (context.mounted) {
+                    showErrorSnackBar(context, s.scheduleSaveFailed);
+                  }
                 }
               },
               child: Text(s.save),

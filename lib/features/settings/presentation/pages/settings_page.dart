@@ -800,61 +800,69 @@ class _SettingsPageState extends State<SettingsPage> {
           .toList(),
     };
 
-    final jsonString = const JsonEncoder.withIndent('  ').convert(payload);
-    final bytes = Uint8List.fromList(utf8.encode(jsonString));
-    final dateTag = DateTime.now().toIso8601String().substring(0, 10);
-    final fileName = 'applyflow_backup_$dateTag.json';
+    try {
+      final jsonString = const JsonEncoder.withIndent('  ').convert(payload);
+      final bytes = Uint8List.fromList(utf8.encode(jsonString));
+      final dateTag = DateTime.now().toIso8601String().substring(0, 10);
+      final fileName = 'applyflow_backup_$dateTag.json';
 
-    final savedUri = await FilePicker.saveFile(
-      dialogTitle: s.exportBackup,
-      fileName: fileName,
-      bytes: bytes,
-      mimeType: 'application/json',
-    );
-
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(savedUri != null ? s.backupSaved : s.backupCancelled),
-        ),
+      final savedUri = await FilePicker.saveFile(
+        dialogTitle: s.exportBackup,
+        fileName: fileName,
+        bytes: bytes,
+        mimeType: 'application/json',
       );
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(savedUri != null ? s.backupSaved : s.backupCancelled),
+          ),
+        );
+      }
+    } catch (_) {
+      if (context.mounted) showErrorSnackBar(context, s.exportFailed);
     }
   }
 
   Future<void> _exportCsv(BuildContext context) async {
     final s = AppLocaleScope.of(context);
-    final db = context.read<AppDatabase>();
-    final apps = await db.getAllApplications();
-    if (apps.isEmpty) {
+    try {
+      final db = context.read<AppDatabase>();
+      final apps = await db.getAllApplications();
+      if (apps.isEmpty) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(s.csvEmpty)),
+          );
+        }
+        return;
+      }
+
+      final csvString = CsvExporter.buildApplicationsCsv(
+        apps,
+        customStageNames: s.stageLabelMap,
+      );
+      final bytes = Uint8List.fromList(utf8.encode(csvString));
+      final dateTag = DateTime.now().toIso8601String().substring(0, 10);
+      final fileName = 'applyflow_applications_$dateTag.csv';
+
+      final savedUri = await FilePicker.saveFile(
+        dialogTitle: s.exportCsv,
+        fileName: fileName,
+        bytes: bytes,
+        mimeType: 'text/csv',
+      );
+
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(s.csvEmpty)),
+          SnackBar(
+            content: Text(savedUri != null ? s.csvSaved : s.csvCancelled),
+          ),
         );
       }
-      return;
-    }
-
-    final csvString = CsvExporter.buildApplicationsCsv(
-      apps,
-      customStageNames: s.stageLabelMap,
-    );
-    final bytes = Uint8List.fromList(utf8.encode(csvString));
-    final dateTag = DateTime.now().toIso8601String().substring(0, 10);
-    final fileName = 'applyflow_applications_$dateTag.csv';
-
-    final savedUri = await FilePicker.saveFile(
-      dialogTitle: s.exportCsv,
-      fileName: fileName,
-      bytes: bytes,
-      mimeType: 'text/csv',
-    );
-
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(savedUri != null ? s.csvSaved : s.csvCancelled),
-        ),
-      );
+    } catch (_) {
+      if (context.mounted) showErrorSnackBar(context, s.exportFailed);
     }
   }
 
@@ -887,20 +895,19 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _restoreBackup(BuildContext context) async {
-    final result = await FilePicker.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['json'],
-    );
-    if (result.isEmpty || result.single.path == null) return;
-
+    final s = AppLocaleScope.of(context);
     try {
+      final result = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+      );
+      if (result.isEmpty || result.single.path == null) return;
+
       final raw = await File(result.single.path!).readAsString();
       final decoded = jsonDecode(raw) as Map<String, dynamic>;
       if (decoded['schemaVersion'] != 1) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Unsupported backup schemaVersion.')),
-          );
+          showErrorSnackBar(context, s.backupUnsupportedSchema);
         }
         return;
       }
@@ -1004,17 +1011,11 @@ class _SettingsPageState extends State<SettingsPage> {
       if (context.mounted) {
         context.read<ApplicationsBloc>().add(const LoadApplications());
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Backup restored successfully.')),
+          SnackBar(content: Text(s.backupRestoredOk)),
         );
       }
     } catch (_) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Invalid JSON backup file. Restore cancelled.'),
-          ),
-        );
-      }
+      if (context.mounted) showErrorSnackBar(context, s.backupInvalidFile);
     }
   }
 
@@ -1036,26 +1037,33 @@ class _SettingsPageState extends State<SettingsPage> {
               foregroundColor: Colors.white,
             ),
             onPressed: () async {
-              final db = context.read<AppDatabase>();
-              await db.delete(db.jobApplications).go();
               try {
-                final dir = await getApplicationDocumentsDirectory();
-                final resumesDir = Directory(p.join(dir.path, 'resumes'));
-                if (resumesDir.existsSync()) {
-                  resumesDir.deleteSync(recursive: true);
-                }
-              } catch (_) {}
+                final db = context.read<AppDatabase>();
+                await db.delete(db.jobApplications).go();
+                try {
+                  final dir = await getApplicationDocumentsDirectory();
+                  final resumesDir = Directory(p.join(dir.path, 'resumes'));
+                  if (resumesDir.existsSync()) {
+                    resumesDir.deleteSync(recursive: true);
+                  }
+                } catch (_) {}
 
-              if (ctx.mounted) Navigator.of(ctx).pop();
-              if (context.mounted) {
-                context.read<ApplicationsBloc>().add(const LoadApplications());
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(s.isId
-                        ? 'Seluruh data lokal berhasil dihapus.'
-                        : 'All local data cleared.'),
-                  ),
-                );
+                if (ctx.mounted) Navigator.of(ctx).pop();
+                if (context.mounted) {
+                  context.read<ApplicationsBloc>().add(const LoadApplications());
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(s.isId
+                          ? 'Seluruh data lokal berhasil dihapus.'
+                          : 'All local data cleared.'),
+                    ),
+                  );
+                }
+              } catch (_) {
+                if (ctx.mounted) Navigator.of(ctx).pop();
+                if (context.mounted) {
+                  showErrorSnackBar(context, s.clearDataFailed);
+                }
               }
             },
             child: Text(s.clearAllData),

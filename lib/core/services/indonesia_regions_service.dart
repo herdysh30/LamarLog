@@ -45,10 +45,15 @@ class IndonesiaRegionsService {
   }
 
   Future<List<RegionSuggestion>> _loadFromAsset() async {
-    final raw = await rootBundle.loadString(assetPath);
-    final parsed = parseFromJsonString(raw);
-    _cache = parsed;
-    return parsed;
+    try {
+      final raw = await rootBundle.loadString(assetPath);
+      final parsed = parseFromJsonString(raw);
+      _cache = parsed;
+      return parsed;
+    } catch (_) {
+      // Gracefully fall back to free-text typing if bundled asset fails to load
+      return const [];
+    }
   }
 
   /// Pure parser so the dataset & ranking can be unit-tested directly.

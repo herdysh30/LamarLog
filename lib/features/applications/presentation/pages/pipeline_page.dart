@@ -326,43 +326,13 @@ class _PipelinePageState extends State<PipelinePage> {
                     child: state.isLoading
                         ? const Center(child: CircularProgressIndicator())
                         : state.errorMessage != null
-                            ? Center(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(24),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(Icons.error_outline_rounded,
-                                          size: 40, color: cs.error),
-                                      const SizedBox(height: 12),
-                                      Text(
-                                        s.isId
-                                            ? 'Gagal memuat database lokal'
-                                            : 'Failed to load local database',
-                                        style: theme.textTheme.titleMedium,
-                                        textAlign: TextAlign.center,
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Text(
-                                        state.errorMessage!,
-                                        style: theme.textTheme.bodySmall,
-                                        textAlign: TextAlign.center,
-                                        maxLines: 4,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      const SizedBox(height: 16),
-                                      FilledButton.icon(
-                                        onPressed: () => context
-                                            .read<ApplicationsBloc>()
-                                            .add(const LoadApplications()),
-                                        icon: const Icon(Icons.refresh_rounded,
-                                            size: 18),
-                                        label: Text(
-                                            s.isId ? 'Coba Lagi' : 'Retry'),
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                            ? ErrorStateCard(
+                                title: s.dbLoadErrorTitle,
+                                detail: state.errorMessage,
+                                retryLabel: s.retry,
+                                onRetry: () => context
+                                    .read<ApplicationsBloc>()
+                                    .add(const LoadApplications()),
                               )
                             : _isKanbanView
                             ? _KanbanBoard(

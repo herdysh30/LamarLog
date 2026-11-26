@@ -544,6 +544,57 @@ class AppStrings {
   String get moveUp => isId ? 'Naikkan' : 'Move Up';
   String get moveDown => isId ? 'Turunkan' : 'Move Down';
 
+  // Error handling & validation messages
+  String get retry => isId ? 'Coba Lagi' : 'Retry';
+  String get dbLoadErrorTitle =>
+      isId ? 'Gagal memuat data lokal' : 'Failed to load local data';
+  String get unexpectedErrorTitle =>
+      isId ? 'Terjadi kendala tak terduga' : 'Something went wrong';
+  String get actionFailedGeneric => isId
+      ? 'Tindakan gagal diproses. Coba beberapa saat lagi.'
+      : 'Action failed to complete. Please try again.';
+  String get exportFailed => isId
+      ? 'Gagal mengekspor file. Pastikan penyimpanan cukup.'
+      : 'Failed to export file. Please check available storage.';
+  String get clearDataFailed => isId
+      ? 'Gagal menghapus sebagian data lokal. Coba lagi.'
+      : 'Failed to clear local data. Please try again.';
+  String get pdfAttachFailed => isId
+      ? 'Gagal melampirkan PDF. Pastikan file valid dan penyimpanan cukup.'
+      : 'Failed to attach PDF. Ensure the file is valid and storage is available.';
+  String get pdfFileNotFoundTitle =>
+      isId ? 'File tidak ditemukan' : 'File not found';
+  String get pdfFileNotFoundBody => isId
+      ? 'File PDF di penyimpanan privat hilang atau rusak. Silakan lampirkan ulang.'
+      : 'The PDF file in private storage is missing or corrupted. Please re-attach it.';
+  String pdfLoadError(String err) => isId
+      ? 'Gagal membuka PDF: $err'
+      : 'Error loading PDF: $err';
+  String get backupUnsupportedSchema => isId
+      ? 'Versi schema backup tidak didukung.'
+      : 'Unsupported backup schemaVersion.';
+  String get backupRestoredOk => isId
+      ? 'Backup berhasil dipulihkan.'
+      : 'Backup restored successfully.';
+  String get backupInvalidFile => isId
+      ? 'File backup JSON tidak valid atau rusak. Pemulihan dibatalkan.'
+      : 'Invalid or corrupted JSON backup file. Restore cancelled.';
+  String get reminderScheduleFailed => isId
+      ? 'Jadwal disimpan, namun alarm pengingat dibatasi oleh sistem perangkat.'
+      : 'Schedule saved, but reminder alarms are restricted by this device.';
+  String get roundNameRequired => isId
+      ? 'Nama tahap interview tidak boleh kosong.'
+      : 'Interview round name cannot be empty.';
+  String get pastInterviewError => isId
+      ? 'Pilih tanggal dan waktu di masa mendatang.'
+      : 'Please pick a future date and time.';
+  String get noteSaveFailed => isId
+      ? 'Gagal menyimpan catatan. Coba lagi.'
+      : 'Failed to save note. Please try again.';
+  String get scheduleSaveFailed => isId
+      ? 'Gagal menyimpan jadwal interview. Coba lagi.'
+      : 'Failed to save interview schedule. Please try again.';
+
   // Enum & custom stage labels
   String defaultStatusLabel(ApplicationStatus status) {
     if (!isId) return status.label;
