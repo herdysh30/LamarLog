@@ -85,7 +85,7 @@ class CrashReportService {
 
   static final CrashReportService instance = CrashReportService._();
 
-  static const String appVersion = '1.3.1';
+  static const String appVersion = '1.3.2';
   static const String githubOwner = 'herdysh30';
   static const String githubRepo = 'LamarLog';
 

@@ -2,6 +2,19 @@
 
 All notable changes to **LamarLog** (formerly ApplyFlow) are documented in this file.
 
+## [1.3.2] - 2026-11-28
+
+### Added
+- **Single-Tap Card Quick Move (`Pindah ⌄`):** Added a non-drag status transition chip directly on active application cards (`ApplicationCard`) in Kanban and List views for WCAG 2.2 AA accessibility.
+- **Collapsible Optional Form Fields:** Grouped source platform, vacancy URL, and recruiter contact inside an expandable section in `FormCompensationSection` (auto-expanded when editing or populated) to reduce initial form overwhelm.
+- **FigCraft UI/UX Design Spec & Rule:** Added `lamarlog_design.figcraft` (Design System, Light/Dark core screens, and sub-screens) and `.agents/rules/lamarlog-figcraft-design.md`.
+
+### Changed
+- **Compact Pipeline Header & Clear FAB Gutter:** Moved the Terminal Archive pill (`Arsip`) to the top AppBar, switched the mobile Kanban/List toggle to an icon-only segmented control, slimmed the stale follow-up banner to a single row, removed the redundant bottom summary strip, and adjusted FAB clearance so cards are never obscured.
+- **Mobile Text Capacity & Full-Width Role Titles:** Moved `roleTitle` below the company header row on `ApplicationCard` to prevent narrow Kanban column truncation, bumped readable metadata/sub-KPI text to a `12px` floor (`11px` minimum for pills/badges), and converted `AnalyticsVelocityCard` from 3 narrow tiles to full-width vertical velocity rows.
+- **Sticky Form Footer & Slim Notification Banner:** Pinned `Batal` (`48dp`) and `Simpan Lamaran` (`52dp`) to `Scaffold.bottomNavigationBar` in `ApplicationFormPage`, and compacted the notification permission warning banner with a responsive layout fallback down to `320dp` and `1.3x` font scaling.
+- **WCAG AA Muted Text Tokens:** Added `AppColors.mutedTextLight` (`#5A596B`) and `AppColors.mutedTextDark` (`#94A3B8`) to ensure `>= 4.5:1` contrast for secondary captions and hints across Light and Dark themes.
+
 ## [1.3.1] - 2026-11-26
 
 ### Added
