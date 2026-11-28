@@ -14,6 +14,7 @@ class PipelineListView extends StatelessWidget {
     required this.onAddFirst,
     required this.isFiltered,
     required this.onResetFilters,
+    this.onQuickMove,
   });
 
   final List<JobApplication> applications;
@@ -22,6 +23,7 @@ class PipelineListView extends StatelessWidget {
   final VoidCallback onAddFirst;
   final bool isFiltered;
   final VoidCallback onResetFilters;
+  final ValueChanged<JobApplication>? onQuickMove;
 
   @override
   Widget build(BuildContext context) {
@@ -139,6 +141,8 @@ class PipelineListView extends StatelessWidget {
                 upcomingInterview: nextInterviewByApp[app.id],
                 showStatusChip: true,
                 onTap: () => onOpenDetail(app),
+                onQuickMove:
+                    onQuickMove == null ? null : () => onQuickMove!(app),
               );
             },
           );
@@ -165,6 +169,8 @@ class PipelineListView extends StatelessWidget {
                       upcomingInterview: nextInterviewByApp[left.id],
                       showStatusChip: true,
                       onTap: () => onOpenDetail(left),
+                      onQuickMove:
+                          onQuickMove == null ? null : () => onQuickMove!(left),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -175,6 +181,9 @@ class PipelineListView extends StatelessWidget {
                             upcomingInterview: nextInterviewByApp[right.id],
                             showStatusChip: true,
                             onTap: () => onOpenDetail(right),
+                            onQuickMove: onQuickMove == null
+                                ? null
+                                : () => onQuickMove!(right),
                           )
                         : const SizedBox.shrink(),
                   ),

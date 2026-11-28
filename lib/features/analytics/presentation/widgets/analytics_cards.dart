@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../app/theme/app_colors.dart';
 import '../../../../core/l10n/app_strings.dart';
 import '../../../../core/layout/responsive.dart';
 import '../../../../core/motion/app_motion.dart';
@@ -258,30 +259,24 @@ class AnalyticsVelocityCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          Row(
+          Column(
             children: [
-              Expanded(
-                child: _VelocityTile(
-                  label: s.isId ? 'Dilamar → Screen' : 'Applied → Screen',
-                  days: metrics.appliedToScreenDays,
-                  unit: s.isId ? 'h' : 'd',
-                ),
+              _VelocityRow(
+                label: s.isId ? 'Dilamar → Screening' : 'Applied → Screening',
+                days: metrics.appliedToScreenDays,
+                unit: s.isId ? 'hari' : 'd',
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _VelocityTile(
-                  label: 'Screen → Interview',
-                  days: metrics.screenToInterviewDays,
-                  unit: s.isId ? 'h' : 'd',
-                ),
+              const SizedBox(height: 6),
+              _VelocityRow(
+                label: 'Screening → Interview',
+                days: metrics.screenToInterviewDays,
+                unit: s.isId ? 'hari' : 'd',
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _VelocityTile(
-                  label: 'Interview → Offer',
-                  days: metrics.interviewToOfferDays,
-                  unit: s.isId ? 'h' : 'd',
-                ),
+              const SizedBox(height: 6),
+              _VelocityRow(
+                label: 'Interview → Offering',
+                days: metrics.interviewToOfferDays,
+                unit: s.isId ? 'hari' : 'd',
               ),
             ],
           ),
@@ -361,8 +356,10 @@ class _KpiCard extends StatelessWidget {
               Flexible(
                 child: Text(
                   label,
-                  style: theme.textTheme.labelSmall
-                      ?.copyWith(color: cs.onSurfaceVariant),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: cs.onSurfaceVariant,
+                    fontWeight: FontWeight.w500,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -385,8 +382,8 @@ class _KpiCard extends StatelessWidget {
           ),
           Text(
             subtitle,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: cs.secondary,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: AppColors.mutedText(theme.brightness),
               fontWeight: FontWeight.w500,
             ),
             maxLines: 1,
@@ -398,8 +395,8 @@ class _KpiCard extends StatelessWidget {
   }
 }
 
-class _VelocityTile extends StatelessWidget {
-  const _VelocityTile({
+class _VelocityRow extends StatelessWidget {
+  const _VelocityRow({
     required this.label,
     required this.days,
     required this.unit,
@@ -415,27 +412,29 @@ class _VelocityTile extends StatelessWidget {
     final cs = theme.colorScheme;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
       decoration: BoxDecoration(
         color: cs.surfaceContainer,
         borderRadius: BorderRadius.circular(10),
       ),
-      child: Column(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.labelSmall?.copyWith(
-              fontSize: 10,
-              color: cs.onSurfaceVariant,
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: cs.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(width: 8),
           Text(
-            days == null ? '—' : '${days!.toStringAsFixed(1)}$unit',
-            style: theme.textTheme.titleSmall?.copyWith(
+            days == null ? '—' : '${days!.toStringAsFixed(1)} $unit',
+            style: theme.textTheme.labelLarge?.copyWith(
               fontWeight: FontWeight.w700,
               fontFeatures: const [FontFeature.tabularFigures()],
             ),

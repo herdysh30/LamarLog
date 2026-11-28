@@ -16,6 +16,7 @@ class PipelineKanbanBoard extends StatelessWidget {
     required this.nextInterviewByApp,
     required this.onAddToStage,
     required this.onOpenDetail,
+    this.onQuickMove,
     this.onRenameStage,
     this.onManageStages,
   });
@@ -24,6 +25,7 @@ class PipelineKanbanBoard extends StatelessWidget {
   final Map<String, InterviewSchedule> nextInterviewByApp;
   final ValueChanged<PipelineStageConfig> onAddToStage;
   final ValueChanged<JobApplication> onOpenDetail;
+  final ValueChanged<JobApplication>? onQuickMove;
   final ValueChanged<PipelineStageConfig>? onRenameStage;
   final VoidCallback? onManageStages;
 
@@ -300,7 +302,7 @@ class PipelineKanbanBoard extends StatelessWidget {
                               )
                             : ListView.separated(
                                 padding: EdgeInsets.only(
-                                  bottom: compactHeight ? 56 : 72,
+                                  bottom: compactHeight ? 60 : 88,
                                 ),
                                 itemCount: apps.length + 1,
                                 separatorBuilder: (_, _) =>
@@ -372,6 +374,9 @@ class PipelineKanbanBoard extends StatelessWidget {
                                       application: app,
                                       upcomingInterview: interview,
                                       onTap: () => onOpenDetail(app),
+                                      onQuickMove: onQuickMove == null
+                                          ? null
+                                          : () => onQuickMove!(app),
                                     ),
                                   );
                                 },

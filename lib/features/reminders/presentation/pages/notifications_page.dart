@@ -159,59 +159,83 @@ class _NotificationsPageState extends State<NotificationsPage>
                   ),
                 ),
 
-                // Warning banner if upcoming reminders are inactive
+                // Compact warning banner if upcoming reminders are inactive
                 if (_showUpcoming && inactiveUpcoming.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
                       color: isDark
                           ? AppColors.warningBgDark
                           : AppColors.warningBgLight,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Icon(
-                              Icons.notifications_off_outlined,
-                              size: 19,
-                              color: isDark
-                                  ? AppColors.warningIconDark
-                                  : AppColors.warningIconLight,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                s.permissionInactiveBanner,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: isDark
-                                      ? AppColors.warningFgDark
-                                      : AppColors.warningFgLight,
-                                  height: 1.35,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: FilledButton.tonal(
-                            style: FilledButton.styleFrom(
-                              minimumSize: const Size(0, 36),
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 12),
-                            ),
-                            onPressed: () => _rescheduleInactive(
-                                context, db, inactiveUpcoming),
-                            child: Text(s.enableReminders),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final textScale =
+                            MediaQuery.textScalerOf(context).scale(1.0);
+                        final isTight =
+                            constraints.maxWidth < 330 * textScale;
+                        final btn = FilledButton.tonal(
+                          style: FilledButton.styleFrom(
+                            minimumSize: const Size(0, 36),
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
                           ),
-                        ),
-                      ],
+                          onPressed: () => _rescheduleInactive(
+                              context, db, inactiveUpcoming),
+                          child: Text(s.enableReminders),
+                        );
+                        final icon = Icon(
+                          Icons.notifications_off_outlined,
+                          size: 19,
+                          color: isDark
+                              ? AppColors.warningIconDark
+                              : AppColors.warningIconLight,
+                        );
+                        final msg = Text(
+                          s.permissionInactiveBanner,
+                          maxLines: isTight ? 3 : 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: isDark
+                                ? AppColors.warningFgDark
+                                : AppColors.warningFgLight,
+                            height: 1.3,
+                          ),
+                        );
+
+                        if (isTight) {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  icon,
+                                  const SizedBox(width: 8),
+                                  Expanded(child: msg),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: btn,
+                              ),
+                            ],
+                          );
+                        }
+
+                        return Row(
+                          children: [
+                            icon,
+                            const SizedBox(width: 8),
+                            Expanded(child: msg),
+                            const SizedBox(width: 8),
+                            btn,
+                          ],
+                        );
+                      },
                     ),
                   ),
                 ],

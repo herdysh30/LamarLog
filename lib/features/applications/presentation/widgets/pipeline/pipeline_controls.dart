@@ -157,7 +157,7 @@ class PipelineStaleBanner extends StatelessWidget {
     final s = AppLocaleScope.of(context);
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(16, 2, 16, compact ? 4 : 10),
+      padding: EdgeInsets.fromLTRB(16, 2, 16, compact ? 4 : 6),
       child: Material(
         color: staleOnlyFilter
             ? cs.primaryContainer
@@ -169,7 +169,7 @@ class PipelineStaleBanner extends StatelessWidget {
           child: Padding(
             padding: EdgeInsets.symmetric(
               horizontal: 12,
-              vertical: compact ? 6 : 10,
+              vertical: compact ? 6 : 8,
             ),
             child: Row(
               children: [
@@ -186,37 +186,18 @@ class PipelineStaleBanner extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        s.staleBannerTitle(staleCount),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          color: staleOnlyFilter
-                              ? Colors.white
-                              : (isDark
-                                  ? const Color(0xFFFDE68A)
-                                  : const Color(0xFF78350F)),
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      if (!compact)
-                        Text(
-                          s.staleBannerSub,
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: staleOnlyFilter
-                                ? Colors.white.withValues(alpha: 0.85)
-                                : (isDark
-                                    ? const Color(0xFFFCD34D)
-                                        .withValues(alpha: 0.85)
-                                    : const Color(0xFF92400E)
-                                        .withValues(alpha: 0.85)),
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                    ],
+                  child: Text(
+                    s.staleBannerTitle(staleCount),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: staleOnlyFilter
+                          ? Colors.white
+                          : (isDark
+                              ? const Color(0xFFFDE68A)
+                              : const Color(0xFF78350F)),
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),

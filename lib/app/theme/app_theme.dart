@@ -81,7 +81,8 @@ abstract final class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: p.surfaceLowLight,
-        hintStyle: const TextStyle(color: AppColors.outlineLight, fontSize: 14),
+        hintStyle:
+            const TextStyle(color: AppColors.mutedTextLight, fontSize: 13.5),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
@@ -240,7 +241,8 @@ abstract final class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: p.surfaceLowDark,
-        hintStyle: const TextStyle(color: AppColors.outlineDark, fontSize: 14),
+        hintStyle:
+            const TextStyle(color: AppColors.mutedTextDark, fontSize: 13.5),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,

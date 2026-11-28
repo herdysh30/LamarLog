@@ -223,6 +223,7 @@ abstract final class AppColors {
   static const Color surfaceContainerLowestLight = Color(0xFFFFFFFF);
   static const Color onSurfaceLight = Color(0xFF131B2E);
   static const Color onSurfaceVariantLight = Color(0xFF464555);
+  static const Color mutedTextLight = Color(0xFF5A596B);
   static const Color outlineLight = Color(0xFF777587);
   static const Color inverseSurfaceLight = Color(0xFF283044);
   static const Color inverseOnSurfaceLight = Color(0xFFEEF0FF);
@@ -241,7 +242,11 @@ abstract final class AppColors {
 
   static const Color onSurfaceDark = Color(0xFFF1F5F9);
   static const Color onSurfaceVariantDark = Color(0xFFA0AEC0);
+  static const Color mutedTextDark = Color(0xFF94A3B8);
   static const Color outlineDark = Color(0xFF64748B);
+
+  static Color mutedText(Brightness brightness) =>
+      brightness == Brightness.dark ? mutedTextDark : mutedTextLight;
 
   // Warning (Amber) semantic tokens
   static const Color warningBgLight = Color(0xFFFEF3C7);

@@ -172,7 +172,7 @@ class _ApplicationFormPageState extends State<ApplicationFormPage> {
         child: Form(
           key: _formKey,
           child: ListView(
-            padding: Responsive.pagePadding(context, bottom: 32),
+            padding: Responsive.pagePadding(context, bottom: 24),
             children: [
               FormCoreSection(
                 companyCtrl: _companyCtrl,
@@ -236,46 +236,78 @@ class _ApplicationFormPageState extends State<ApplicationFormPage> {
                   () => _platformCtrl.text = preset,
                 ),
               ),
-              const SizedBox(height: 20),
-              SizedBox(
-                height: 52,
-                child: FilledButton.icon(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: cs.primaryContainer,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  onPressed: _submit,
-                  icon:
-                      const Icon(Icons.check_circle_outline_rounded, size: 20),
-                  label: Text(
-                    widget.isEditing
-                        ? s.updateApplication
-                        : s.saveApplication,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              SizedBox(
-                height: 48,
-                child: OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    side: BorderSide(color: cs.outlineVariant),
-                  ),
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: Text(s.cancel),
-                ),
-              ),
             ],
+          ),
+        ),
+      ),
+      bottomNavigationBar: Material(
+        color: cs.surfaceContainerLowest,
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border(
+              top: BorderSide(
+                color: cs.outlineVariant.withValues(alpha: 0.45),
+                width: 0.75,
+              ),
+            ),
+          ),
+          child: SafeArea(
+            top: false,
+            child: ResponsiveCenter(
+              maxWidth: 680,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      height: 48,
+                      width: 108,
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          side: BorderSide(color: cs.outlineVariant),
+                        ),
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: Text(s.cancel),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: SizedBox(
+                        height: 52,
+                        child: FilledButton.icon(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: cs.primaryContainer,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          onPressed: _submit,
+                          icon: const Icon(
+                            Icons.check_circle_outline_rounded,
+                            size: 20,
+                          ),
+                          label: Text(
+                            widget.isEditing
+                                ? s.updateApplication
+                                : s.saveApplication,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
       ),

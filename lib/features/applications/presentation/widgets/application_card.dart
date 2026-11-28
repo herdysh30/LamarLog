@@ -17,6 +17,7 @@ class ApplicationCard extends StatelessWidget {
     this.showStatusChip = false,
     this.enableHero = true,
     this.onTap,
+    this.onQuickMove,
   });
 
   final JobApplication application;
@@ -24,6 +25,7 @@ class ApplicationCard extends StatelessWidget {
   final bool showStatusChip;
   final bool enableHero;
   final VoidCallback? onTap;
+  final VoidCallback? onQuickMove;
 
   @override
   Widget build(BuildContext context) {
@@ -66,23 +68,24 @@ class ApplicationCard extends StatelessWidget {
 
     final monogram = CompanyMonogram(
       companyName: application.companyName,
-      size: 42,
-      radius: 12,
+      size: 38,
+      radius: 11,
     );
+    final mutedColor = AppColors.mutedText(brightness);
 
     return PressableScale(
       enabled: onTap != null,
       child: SurfaceCard(
         onTap: onTap,
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(15),
         radius: 16,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Header: Monogram + Company & Role + Priority Pill
+            // Row 1: Monogram + Company Name + Priority Pill
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 if (enableHero)
                   Hero(
@@ -91,89 +94,86 @@ class ApplicationCard extends StatelessWidget {
                   )
                 else
                   monogram,
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      application.companyName,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -0.1,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      application.roleTitle,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        fontSize: 13,
-                        color: cs.onSurfaceVariant,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              _PriorityPill(
-                priority: priority,
-                brightness: brightness,
-                label: s.priorityLabel(priority, compact: true),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-
-          // Compensation + Workplace / Location Strip (auto-wraps cleanly on tight widths)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
-            decoration: BoxDecoration(
-              color: cs.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(11),
-            ),
-            child: Wrap(
-              alignment: WrapAlignment.spaceBetween,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              spacing: 10,
-              runSpacing: 6,
-              children: [
-                RichText(
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  text: TextSpan(
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    application.companyName,
                     style: theme.textTheme.titleSmall?.copyWith(
-                      fontSize: 14.5,
+                      fontSize: 15,
                       fontWeight: FontWeight.w700,
-                      fontFeatures: const [FontFeature.tabularFigures()],
+                      letterSpacing: -0.1,
                     ),
-                    children: [
-                      TextSpan(
-                        text: salaryStr,
-                        style: hasSalary
-                            ? null
-                            : TextStyle(
-                                color: cs.outline,
-                                fontWeight: FontWeight.w500,
-                                fontSize: 12.5,
-                              ),
-                      ),
-                      if (hasSalary)
-                        TextSpan(
-                          text: periodStr,
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: cs.secondary,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                    ],
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
+                const SizedBox(width: 8),
+                _PriorityPill(
+                  priority: priority,
+                  brightness: brightness,
+                  label: s.priorityLabel(priority, compact: true),
+                ),
+              ],
+            ),
+            // Row 2: Full-width Role Title (prevents cramped Kanban truncation)
+            const SizedBox(height: 6),
+            Text(
+              application.roleTitle,
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: cs.onSurfaceVariant,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 12),
+
+            // Compensation + Workplace / Location Strip (auto-wraps cleanly on tight widths)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
+              decoration: BoxDecoration(
+                color: cs.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(11),
+              ),
+              child: Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 10,
+                runSpacing: 6,
+                children: [
+                  RichText(
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    text: TextSpan(
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w700,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
+                      children: [
+                        TextSpan(
+                          text: salaryStr,
+                          style: hasSalary
+                              ? null
+                              : TextStyle(
+                                  color: mutedColor,
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 12.5,
+                                ),
+                        ),
+                        if (hasSalary)
+                          TextSpan(
+                            text: periodStr,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: cs.secondary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -289,7 +289,7 @@ class ApplicationCard extends StatelessWidget {
                           Icon(
                             Icons.work_outline_rounded,
                             size: 13.5,
-                            color: cs.outline,
+                            color: mutedColor,
                           ),
                           const SizedBox(width: 5),
                           Flexible(
@@ -297,7 +297,7 @@ class ApplicationCard extends StatelessWidget {
                               s.jobTypeLabel(jobType),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: theme.textTheme.labelSmall?.copyWith(
+                              style: theme.textTheme.bodySmall?.copyWith(
                                 color: cs.onSurfaceVariant,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -318,7 +318,7 @@ class ApplicationCard extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.labelSmall?.copyWith(
-                            fontSize: 10.5,
+                            fontSize: 11,
                             color: cs.onSecondaryContainer,
                             fontWeight: FontWeight.w600,
                           ),
@@ -326,67 +326,112 @@ class ApplicationCard extends StatelessWidget {
                       ),
                   ],
                 ),
-                if (isStale)
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: brightness == Brightness.dark
-                          ? const Color(0xFF3E2C0A)
-                          : const Color(0xFFFFF3CD),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.notifications_active_outlined,
-                          size: 12,
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    if (isStale)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 7, vertical: 3),
+                        decoration: BoxDecoration(
                           color: brightness == Brightness.dark
-                              ? const Color(0xFFFCD34D)
-                              : const Color(0xFF92400E),
+                              ? const Color(0xFF3E2C0A)
+                              : const Color(0xFFFFF3CD),
+                          borderRadius: BorderRadius.circular(999),
                         ),
-                        const SizedBox(width: 4),
-                        Flexible(
-                          child: Text(
-                            s.needsFollowUpBadge(daysInStage),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              fontSize: 10.5,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.notifications_active_outlined,
+                              size: 12,
                               color: brightness == Brightness.dark
                                   ? const Color(0xFFFCD34D)
                                   : const Color(0xFF92400E),
-                              fontWeight: FontWeight.w700,
+                            ),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                s.needsFollowUpBadge(daysInStage),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  fontSize: 11,
+                                  color: brightness == Brightness.dark
+                                      ? const Color(0xFFFCD34D)
+                                      : const Color(0xFF92400E),
+                                  fontWeight: FontWeight.w700,
+                                  fontFeatures: const [
+                                    FontFeature.tabularFigures()
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.schedule_rounded,
+                            size: 13,
+                            color: mutedColor,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            s.daysInStage(daysInStage),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: mutedColor,
+                              fontWeight: FontWeight.w500,
                               fontFeatures: const [
                                 FontFeature.tabularFigures()
                               ],
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                  )
-                else
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.schedule_rounded,
-                        size: 13,
-                        color: cs.outline,
+                        ],
                       ),
-                      const SizedBox(width: 4),
-                      Text(
-                        s.daysInStage(daysInStage),
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: cs.outline,
-                          fontWeight: FontWeight.w500,
-                          fontFeatures: const [FontFeature.tabularFigures()],
+                    if (onQuickMove != null)
+                      Semantics(
+                        button: true,
+                        label: s.updateStateTitle,
+                        child: Material(
+                          color: cs.primaryFixed,
+                          borderRadius: BorderRadius.circular(8),
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(8),
+                            onTap: onQuickMove,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    s.isId ? 'Pindah' : 'Move',
+                                    style: theme.textTheme.labelSmall?.copyWith(
+                                      fontSize: 11.5,
+                                      color: cs.onPrimaryFixed,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 2),
+                                  Icon(
+                                    Icons.keyboard_arrow_down_rounded,
+                                    size: 15,
+                                    color: cs.onPrimaryFixed,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         ),
                       ),
-                    ],
-                  ),
+                  ],
+                ),
               ],
             ),
           ),

@@ -234,8 +234,11 @@ void main() {
           ),
         );
 
-        // Switch to List view
-        final listBtn = find.text('Daftar');
+        // Switch to List view (supports both icon-only tooltip on mobile & labeled button on wide)
+        final textListBtn = find.text('Daftar');
+        final listBtn = textListBtn.evaluate().isNotEmpty
+            ? textListBtn
+            : find.byTooltip('Daftar');
         if (listBtn.evaluate().isNotEmpty) {
           errors.clear();
           await tester.tap(listBtn.first);
