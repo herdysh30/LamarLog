@@ -2,6 +2,12 @@
 
 All notable changes to **LamarLog** (formerly ApplyFlow) are documented in this file.
 
+## [1.3.4] - 2026-11-28
+
+### Fixed
+- **Application Form Body Collapsed Behind Sticky Footer:** Replaced `ResponsiveCenter` (`Align` without `heightFactor`) inside `ApplicationFormPage`'s `Scaffold.bottomNavigationBar` with `Align(alignment: Alignment.topCenter, heightFactor: 1.0, ...)` so the sticky `Cancel`/`Save Application` footer keeps its intrinsic height and no longer collapses the form body.
+- **Priority Tile Narrow-Screen Overflow:** Wrapped priority label text in `Flexible` inside `FormWorkAndStatusSection` to prevent a `3.9px` horizontal overflow on compact mobile screens and updated muted sublabel contrast tokens.
+
 ## [1.3.3] - 2026-11-28
 
 ### Fixed

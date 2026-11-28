@@ -243,11 +243,16 @@ class FormPipelineStatusSection extends StatelessWidget {
                                   ),
                                 ),
                                 const SizedBox(width: 5),
-                                Text(
-                                  s.priorityLabel(level),
-                                  style: theme.textTheme.labelMedium?.copyWith(
-                                    color: selected ? fg : cs.onSurfaceVariant,
-                                    fontWeight: FontWeight.w600,
+                                Flexible(
+                                  child: Text(
+                                    s.priorityLabel(level),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style:
+                                        theme.textTheme.labelMedium?.copyWith(
+                                      color: selected ? fg : cs.onSurfaceVariant,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -255,12 +260,14 @@ class FormPipelineStatusSection extends StatelessWidget {
                             const SizedBox(height: 2),
                             Text(
                               sub,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: theme.textTheme.labelSmall?.copyWith(
-                                fontSize: 10,
+                                fontSize: 11,
                                 fontWeight: FontWeight.w400,
                                 color: selected
                                     ? fg.withValues(alpha: 0.85)
-                                    : cs.outline,
+                                    : AppColors.mutedText(brightness),
                               ),
                             ),
                           ],

@@ -253,58 +253,62 @@ class _ApplicationFormPageState extends State<ApplicationFormPage> {
           ),
           child: SafeArea(
             top: false,
-            child: ResponsiveCenter(
-              maxWidth: 680,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
-                child: Row(
-                  children: [
-                    SizedBox(
-                      height: 48,
-                      width: 108,
-                      child: OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          side: BorderSide(color: cs.outlineVariant),
-                        ),
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: Text(s.cancel),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: SizedBox(
-                        height: 52,
-                        child: FilledButton.icon(
-                          style: FilledButton.styleFrom(
-                            backgroundColor: cs.primaryContainer,
-                            foregroundColor: Colors.white,
+            child: Align(
+              alignment: Alignment.topCenter,
+              heightFactor: 1.0,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 680),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        height: 48,
+                        width: 108,
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(14),
                             ),
+                            side: BorderSide(color: cs.outlineVariant),
                           ),
-                          onPressed: _submit,
-                          icon: const Icon(
-                            Icons.check_circle_outline_rounded,
-                            size: 20,
-                          ),
-                          label: Text(
-                            widget.isEditing
-                                ? s.updateApplication
-                                : s.saveApplication,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: Text(s.cancel),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: SizedBox(
+                          height: 52,
+                          child: FilledButton.icon(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: cs.primaryContainer,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                            onPressed: _submit,
+                            icon: const Icon(
+                              Icons.check_circle_outline_rounded,
+                              size: 20,
+                            ),
+                            label: Text(
+                              widget.isEditing
+                                  ? s.updateApplication
+                                  : s.saveApplication,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),

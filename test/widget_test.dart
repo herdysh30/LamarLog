@@ -83,18 +83,35 @@ void main() {
 
   testWidgets('Pushing a route from AppShell has no duplicate Hero tag error',
       (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final captured = <String>[];
+    final prevErr = FlutterError.onError;
+    FlutterError.onError = (details) {
+      captured.add(details.toString());
+    };
+
     final db = AppDatabase(NativeDatabase.memory());
+    try {
+      await tester.pumpWidget(LamarLogApp(database: db));
+      await tester.pumpAndSettle();
 
-    await tester.pumpWidget(LamarLogApp(database: db));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Track Job'));
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Track Job'));
-    await tester.pumpAndSettle();
-
-    expect(tester.takeException(), isNull);
-
-    await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pump(const Duration(milliseconds: 50));
-    await tester.runAsync(() => db.close());
+      FlutterError.onError = prevErr;
+      expect(captured, isEmpty);
+      expect(find.byType(TextFormField), findsWidgets);
+      expect(tester.getSize(find.byType(ListView)).height, greaterThan(400));
+      expect(tester.getTopLeft(find.byType(FilledButton)).dy, greaterThan(650));
+    } finally {
+      FlutterError.onError = prevErr;
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.runAsync(() => db.close());
+    }
   });
 }
