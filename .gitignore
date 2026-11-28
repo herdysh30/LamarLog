@@ -46,3 +46,8 @@ app.*.map.json
 
 # Cloudflare Wrangler local state & cache
 .wrangler/
+
+# Android release signing secrets
+android/key.properties
+*.jks
+*.keystore

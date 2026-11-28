@@ -2,6 +2,11 @@
 
 All notable changes to **LamarLog** (formerly ApplyFlow) are documented in this file.
 
+## [1.3.3] - 2026-11-28
+
+### Fixed
+- **Persistent Android Release Signing:** Configured `signingConfigs.release` in `android/app/build.gradle.kts` and keystore decoding from GitHub Secrets in `.github/workflows/release.yml` so future APK releases share the same signing certificate and install in-place without package signature conflicts.
+
 ## [1.3.2] - 2026-11-28
 
 ### Added
